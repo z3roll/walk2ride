@@ -688,29 +688,50 @@ function q2ToggleZoomService(serviceName) {
         const dy = (c[1] - circleLat) * 111320;
         return dx*dx + dy*dy <= circleR * circleR;
       }
-      function filterInCircle(segs) {
-        return segs.filter(seg => seg.some(c => isInCircle(c)));
-      }
-      const nearFp = filterInCircle(areaData.footpaths || []);
-      const nearCl = filterInCircle(areaData.covered_linkways || []);
-      const nearBr = filterInCircle(areaData.overhead_bridges || []);
+      // Footpaths: plain arrays
+      const nearFp = (areaData.footpaths || []).filter(seg => seg.some(c => isInCircle(c)));
+      // Covered/Bridges: objects with {c, fs, td}
+      const nearCl = (areaData.covered_linkways || []).filter(s => s.c.some(c => isInCircle(c)));
+      const nearBr = (areaData.overhead_bridges || []).filter(s => s.c.some(c => isInCircle(c)));
 
-      function segsToGeoJSON(segs) {
-        return { type: 'FeatureCollection', features: segs.map(coords => ({
+      if (nearFp.length) {
+        const fpGeo = { type: 'FeatureCollection', features: nearFp.map(coords => ({
           type: 'Feature', geometry: { type: 'LineString', coordinates: coords }, properties: {}
         })) };
-      }
-      if (nearFp.length) {
-        q2Map.addSource('zoom-fp', { type: 'geojson', data: segsToGeoJSON(nearFp) });
-        q2Map.addLayer({ id: 'zoom-fp', type: 'line', source: 'zoom-fp', paint: { 'line-color': '#bbb', 'line-width': 2, 'line-opacity': 0.5 } }, 'services-dot');
+        q2Map.addSource('zoom-fp', { type: 'geojson', data: fpGeo });
+        q2Map.addLayer({ id: 'zoom-fp', type: 'line', source: 'zoom-fp', paint: { 'line-color': '#bbb', 'line-width': 3, 'line-opacity': 0.6 } }, 'services-dot');
       }
       if (nearCl.length) {
-        q2Map.addSource('zoom-cl', { type: 'geojson', data: segsToGeoJSON(nearCl) });
+        const clGeo = { type: 'FeatureCollection', features: nearCl.map(s => ({
+          type: 'Feature', geometry: { type: 'LineString', coordinates: s.c },
+          properties: { first_seen: s.fs || 'Unknown' }
+        })) };
+        q2Map.addSource('zoom-cl', { type: 'geojson', data: clGeo });
         q2Map.addLayer({ id: 'zoom-cl', type: 'line', source: 'zoom-cl', paint: { 'line-color': '#4caf50', 'line-width': 4, 'line-opacity': 0.85 } }, 'services-dot');
+        const zClPopup = new maplibregl.Popup({ closeButton: false, closeOnClick: false });
+        q2Map.on('mouseenter', 'zoom-cl', e => {
+          q2Map.getCanvas().style.cursor = 'pointer';
+          const fs = e.features[0].properties.first_seen;
+          zClPopup.setLngLat(e.lngLat).setHTML(`<div style="font-size:12px;"><b style="color:#4caf50;">Covered Linkway</b><br>${fs <= '2019-01' ? 'Built before 2019' : 'First recorded: ' + fs}</div>`).addTo(q2Map);
+        });
+        q2Map.on('mousemove', 'zoom-cl', e => { zClPopup.setLngLat(e.lngLat); });
+        q2Map.on('mouseleave', 'zoom-cl', () => { q2Map.getCanvas().style.cursor = ''; zClPopup.remove(); });
       }
       if (nearBr.length) {
-        q2Map.addSource('zoom-br', { type: 'geojson', data: segsToGeoJSON(nearBr) });
+        const brGeo = { type: 'FeatureCollection', features: nearBr.map(s => ({
+          type: 'Feature', geometry: { type: 'LineString', coordinates: s.c },
+          properties: { first_seen: s.fs || 'Unknown', type_desc: s.td || 'Overhead Bridge' }
+        })) };
+        q2Map.addSource('zoom-br', { type: 'geojson', data: brGeo });
         q2Map.addLayer({ id: 'zoom-br', type: 'line', source: 'zoom-br', paint: { 'line-color': '#ff9800', 'line-width': 4, 'line-opacity': 0.85 } }, 'services-dot');
+        const zBrPopup = new maplibregl.Popup({ closeButton: false, closeOnClick: false });
+        q2Map.on('mouseenter', 'zoom-br', e => {
+          q2Map.getCanvas().style.cursor = 'pointer';
+          const p = e.features[0].properties;
+          zBrPopup.setLngLat(e.lngLat).setHTML(`<div style="font-size:12px;"><b style="color:#ff9800;">${p.type_desc}</b><br>${p.first_seen <= '2019-01' ? 'Built before 2019' : 'First recorded: ' + p.first_seen}</div>`).addTo(q2Map);
+        });
+        q2Map.on('mousemove', 'zoom-br', e => { zBrPopup.setLngLat(e.lngLat); });
+        q2Map.on('mouseleave', 'zoom-br', () => { q2Map.getCanvas().style.cursor = ''; zBrPopup.remove(); });
       }
     }
 
@@ -820,25 +841,50 @@ function initQ2Map(services, areaFeature, areaName) {
     }
 
     // Area infrastructure (footpath + covered linkway + bridge)
+    // New format: footpaths = [[coords]], covered/bridges = [{c: coords, fs: first_seen, td: type_desc}]
     const infra = window.AREA_INFRA;
     const areaData = infra ? (infra[areaName.toUpperCase()] || infra[areaName]) : null;
     if (areaData) {
-      function segsToGeoJSON(segs) {
-        return { type: 'FeatureCollection', features: segs.map(coords => ({
+      // Footpaths (plain coord arrays)
+      if (areaData.footpaths && areaData.footpaths.length) {
+        const fpGeo = { type: 'FeatureCollection', features: areaData.footpaths.map(coords => ({
           type: 'Feature', geometry: { type: 'LineString', coordinates: coords }, properties: {}
         })) };
-      }
-      if (areaData.footpaths && areaData.footpaths.length) {
-        q2Map.addSource('area-fp', { type: 'geojson', data: segsToGeoJSON(areaData.footpaths) });
+        q2Map.addSource('area-fp', { type: 'geojson', data: fpGeo });
         q2Map.addLayer({ id: 'area-fp', type: 'line', source: 'area-fp', paint: { 'line-color': '#bbb', 'line-width': 1.5, 'line-opacity': 0.3 } });
       }
+      // Covered linkways (with first_seen)
       if (areaData.covered_linkways && areaData.covered_linkways.length) {
-        q2Map.addSource('area-cl', { type: 'geojson', data: segsToGeoJSON(areaData.covered_linkways) });
+        const clGeo = { type: 'FeatureCollection', features: areaData.covered_linkways.map(s => ({
+          type: 'Feature', geometry: { type: 'LineString', coordinates: s.c }, properties: { first_seen: s.fs || 'Unknown' }
+        })) };
+        q2Map.addSource('area-cl', { type: 'geojson', data: clGeo });
         q2Map.addLayer({ id: 'area-cl', type: 'line', source: 'area-cl', paint: { 'line-color': '#4caf50', 'line-width': 2.5, 'line-opacity': 0.5 } });
+        // Hover
+        const clPopup = new maplibregl.Popup({ closeButton: false, closeOnClick: false });
+        q2Map.on('mouseenter', 'area-cl', e => {
+          q2Map.getCanvas().style.cursor = 'pointer';
+          const fs = e.features[0].properties.first_seen;
+          clPopup.setLngLat(e.lngLat).setHTML(`<div style="font-size:12px;"><b style="color:#4caf50;">Covered Linkway</b><br>${fs <= '2019-01' ? 'Built before 2019' : 'First recorded: ' + fs}</div>`).addTo(q2Map);
+        });
+        q2Map.on('mousemove', 'area-cl', e => { clPopup.setLngLat(e.lngLat); });
+        q2Map.on('mouseleave', 'area-cl', () => { q2Map.getCanvas().style.cursor = ''; clPopup.remove(); });
       }
+      // Bridges (with first_seen + type)
       if (areaData.overhead_bridges && areaData.overhead_bridges.length) {
-        q2Map.addSource('area-br', { type: 'geojson', data: segsToGeoJSON(areaData.overhead_bridges) });
+        const brGeo = { type: 'FeatureCollection', features: areaData.overhead_bridges.map(s => ({
+          type: 'Feature', geometry: { type: 'LineString', coordinates: s.c }, properties: { first_seen: s.fs || 'Unknown', type_desc: s.td || 'Overhead Bridge' }
+        })) };
+        q2Map.addSource('area-br', { type: 'geojson', data: brGeo });
         q2Map.addLayer({ id: 'area-br', type: 'line', source: 'area-br', paint: { 'line-color': '#ff9800', 'line-width': 2.5, 'line-opacity': 0.5 } });
+        const brPopup = new maplibregl.Popup({ closeButton: false, closeOnClick: false });
+        q2Map.on('mouseenter', 'area-br', e => {
+          q2Map.getCanvas().style.cursor = 'pointer';
+          const p = e.features[0].properties;
+          brPopup.setLngLat(e.lngLat).setHTML(`<div style="font-size:12px;"><b style="color:#ff9800;">${p.type_desc}</b><br>${p.first_seen <= '2019-01' ? 'Built before 2019' : 'First recorded: ' + p.first_seen}</div>`).addTo(q2Map);
+        });
+        q2Map.on('mousemove', 'area-br', e => { brPopup.setLngLat(e.lngLat); });
+        q2Map.on('mouseleave', 'area-br', () => { q2Map.getCanvas().style.cursor = ''; brPopup.remove(); });
       }
     }
 
