@@ -340,7 +340,7 @@ function initMap(detail, summary) {
     maxZoom: 18,
   });
 
-  map.on('load', () => {
+  map.on('load', () => { try { console.log('MAP LOADED OK');
     const geo = detail.geometry || {};
 
     const mc = mismatchColor(summary.mismatch_norm);
@@ -369,8 +369,9 @@ function initMap(detail, summary) {
 
     const clMeta = geo.covered_linkways_meta || [];
     if (clMeta.length) {
-      const clGeo = { type: 'FeatureCollection', features: clMeta.map(s => ({
-        type: 'Feature', geometry: { type: 'LineString', coordinates: s.coords.map(c => [c[0], c[1]]) },
+      const clGeo = { type: 'FeatureCollection', features: clMeta.filter(s => s.coords && s.coords.length >= 2).map(s => ({
+        type: 'Feature',
+        geometry: { type: 'LineString', coordinates: s.coords.map(c => [c[0], c[1]]) },
         properties: { first_seen: s.first_seen || 'Unknown' }
       })) };
       map.addSource('covered', { type: 'geojson', data: clGeo });
@@ -391,8 +392,9 @@ function initMap(detail, summary) {
 
     const brMeta = geo.overhead_bridges_meta || [];
     if (brMeta.length) {
-      const brGeo = { type: 'FeatureCollection', features: brMeta.map(s => ({
-        type: 'Feature', geometry: { type: 'LineString', coordinates: s.coords.map(c => [c[0], c[1]]) },
+      const brGeo = { type: 'FeatureCollection', features: brMeta.filter(s => s.coords && s.coords.length >= 2).map(s => ({
+        type: 'Feature',
+        geometry: { type: 'LineString', coordinates: s.coords.map(c => [c[0], c[1]]) },
         properties: { first_seen: s.first_seen || 'Unknown', type_desc: s.type_desc || 'Overhead Bridge' }
       })) };
       map.addSource('bridges', { type: 'geojson', data: brGeo });
@@ -413,7 +415,11 @@ function initMap(detail, summary) {
 
     map.addSource('station-pt', { type: 'geojson', data: { type: 'Feature', geometry: { type: 'Point', coordinates: [lng, lat] }, properties: {} } });
     map.addLayer({ id: 'station-pt', type: 'circle', source: 'station-pt', paint: { 'circle-radius': 8, 'circle-color': '#4fc3f7', 'circle-stroke-width': 3, 'circle-stroke-color': '#fff' } });
-    map.addLayer({ id: 'station-label', type: 'symbol', source: 'station-pt', layout: { 'text-field': shortName(summary.station), 'text-offset': [0, -1.8], 'text-size': 14, 'text-font': ['Open Sans Bold'] }, paint: { 'text-color': '#fff', 'text-halo-color': '#000', 'text-halo-width': 2 } });
+    // Station name as HTML marker (no glyph dependency)
+    const labelEl = document.createElement('div');
+    labelEl.style.cssText = 'color:#fff;font-size:13px;font-weight:700;text-shadow:0 0 4px #000,0 0 8px #000;pointer-events:none;white-space:nowrap;transform:translate(-50%,-100%);margin-top:-18px;';
+    labelEl.textContent = shortName(summary.station);
+    new maplibregl.Marker({ element: labelEl }).setLngLat([lng, lat]).addTo(map);
 
     const pois = detail.pois || {};
     const poiConfigs = [
@@ -433,10 +439,7 @@ function initMap(detail, summary) {
         paint: { 'circle-radius': 14, 'circle-color': cfg.color, 'circle-opacity': 0.15 } });
       map.addLayer({ id: 'poi-dot-' + cfg.key, type: 'circle', source: 'poi-' + cfg.key,
         paint: { 'circle-radius': 6, 'circle-color': cfg.color, 'circle-stroke-width': 2, 'circle-stroke-color': '#fff', 'circle-opacity': 0.9 } });
-      map.addLayer({ id: 'poi-label-' + cfg.key, type: 'symbol', source: 'poi-' + cfg.key,
-        layout: { 'text-field': ['concat', ['get', 'name'], '\n', ['get', 'subtype']], 'text-offset': [0, 1.5], 'text-size': 10, 'text-font': ['Open Sans Regular'],
-          'text-max-width': 14, 'text-anchor': 'top', 'text-line-height': 1.3 },
-        paint: { 'text-color': cfg.color, 'text-halo-color': '#000', 'text-halo-width': 1.5 } });
+      // POI names shown via hover popup (no symbol layer needed)
     });
 
     const poiPopup = new maplibregl.Popup({ closeButton: false, closeOnClick: false });
@@ -473,7 +476,7 @@ function initMap(detail, summary) {
     const bounds = new maplibregl.LngLatBounds();
     circleCoords.forEach(c => bounds.extend(c));
     map.fitBounds(bounds, { padding: 40 });
-  });
+  } catch(err) { console.error('Map load error:', err); } });
 }
 
 /* ═══════════════════════════════════════════════════════════════════
