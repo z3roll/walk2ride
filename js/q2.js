@@ -687,7 +687,7 @@ function q2ToggleZoomService(serviceName) {
         if (d > maxDist) maxDist = d;
       });
       circleLat = cy; circleLng = cx;
-      circleR = maxDist + 100; // enclosing radius + 100m
+      circleR = Math.max(maxDist + 100, 200); // enclosing radius + 100m, min 200m
     }
 
     // Draw circle

@@ -307,11 +307,11 @@ def main() -> None:
     for i, (_, row) in enumerate(services.iterrows()):
         geom = row.geometry
 
-        # Determine buffer radius
+        # Determine buffer radius (minimum RADIUS_POINT for small polygons)
         if geom.geom_type == "Point":
             buf_radius = RADIUS_POINT
         else:
-            buf_radius = _enclosing_radius(geom) + RADIUS_POLY_EXTRA
+            buf_radius = max(_enclosing_radius(geom) + RADIUS_POLY_EXTRA, RADIUS_POINT)
 
         centroid = geom.centroid
         buf_geom = centroid.buffer(buf_radius)
