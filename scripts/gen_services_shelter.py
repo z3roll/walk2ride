@@ -215,31 +215,84 @@ def compute_shelter_ratio(
 
 
 # ── POI loading ──────────────────────────────────────────────────────────
+_SCHOOL_KEYWORDS = [
+    "school", "academy", "institute", "institut", "university", "college",
+    "polytechnic", "kindergarten", "preschool", "pre-school", "childcare",
+    "child care", "nursery", "montessori", "primary", "secondary", "junior",
+    "faculty", "madrasah", "seminary", "convent", "sparkletots", "skool",
+    "learning centre", "learning center", "education centre", "language centre",
+    "ite college", "nus ", "ntu ", "smu ", "sutd", "sit ", "sim global",
+    "suss", "insead", "essec", "curtin", "mdis", "kaplan", "lasalle", "nafa",
+    "shatec", "awwa", "minds", "moe ", "ministry of education",
+    "dyslexia", "julia gabriel", "maple bear", "mulberry",
+]
+_SCHOOL_BLACKLIST = [
+    "driving centre", "driving center", "dive centre", "dive company",
+    "safety driving", "blk ", "block ", "admin building", "class room",
+    "mortuary", "engineers", "gallery", "art zone", "art zillions",
+    "french toast", "casablanca", "culinary", "studio", "hokkien huay kuan",
+    "examinations", "big bubble", "brenner", "aeroviation",
+]
+
+
 def load_schools() -> gpd.GeoDataFrame:
-    """Load schools, keep only named features."""
+    """Load schools, keep only named features that look like real schools."""
     gdf = _load_geojson(POI_DIR / "schools.geojson")
     gdf = gdf[gdf["name"].notna() & (gdf["name"] != "")].copy()
+
+    def is_school(name: str) -> bool:
+        n = name.lower()
+        if any(k in n for k in _SCHOOL_BLACKLIST):
+            return False
+        if any(k in n for k in _SCHOOL_KEYWORDS):
+            return True
+        return False
+
+    before = len(gdf)
+    gdf = gdf[gdf["name"].apply(is_school)].copy()
     gdf["service_type"] = "School"
-    log.info("  Schools: %d", len(gdf))
+    log.info("  Schools: %d (filtered %d non-school entries)", len(gdf), before - len(gdf))
     return gdf[["name", "service_type", "geometry"]]
+
+
+_HEALTH_BLACKLIST = [
+    "mortuary", "first aid station", "beauty", "slimming", "spa ",
+    "mary chia",
+]
 
 
 def load_healthcare() -> gpd.GeoDataFrame:
-    """Load healthcare, exclude pharmacies, keep only named."""
+    """Load healthcare, exclude pharmacies and non-medical, keep only named."""
     gdf = _load_geojson(POI_DIR / "healthcare.geojson")
     gdf = gdf[gdf["amenity"] != "pharmacy"].copy()
     gdf = gdf[gdf["name"].notna() & (gdf["name"] != "")].copy()
+
+    before = len(gdf)
+    gdf = gdf[~gdf["name"].str.lower().apply(
+        lambda n: any(k in n for k in _HEALTH_BLACKLIST)
+    )].copy()
     gdf["service_type"] = "Healthcare"
-    log.info("  Healthcare: %d", len(gdf))
+    log.info("  Healthcare: %d (filtered %d non-medical entries)", len(gdf), before - len(gdf))
     return gdf[["name", "service_type", "geometry"]]
 
 
+_COMMERCIAL_BLACKLIST = [
+    "school", "kindergarten", "childcare", "clinic", "hospital",
+    "church", "temple", "mosque", "synagogue",
+]
+
+
 def load_commercial() -> gpd.GeoDataFrame:
-    """Load commercial, keep only named features."""
+    """Load commercial, keep only named, remove misclassified."""
     gdf = _load_geojson(POI_DIR / "commercial.geojson")
     gdf = gdf[gdf["name"].notna() & (gdf["name"] != "")].copy()
+
+    before = len(gdf)
+    gdf = gdf[~gdf["name"].str.lower().apply(
+        lambda n: any(k in n for k in _COMMERCIAL_BLACKLIST)
+    )].copy()
     gdf["service_type"] = "Commercial"
-    log.info("  Commercial: %d", len(gdf))
+    log.info("  Commercial: %d (filtered %d misclassified entries)", len(gdf), before - len(gdf))
     return gdf[["name", "service_type", "geometry"]]
 
 
