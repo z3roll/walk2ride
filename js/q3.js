@@ -20,23 +20,40 @@ function q3TitleCase(s) {
   return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
 }
 
-/* Single-hue sequential: bright red → light cream (low shelter = red) */
+/*
+ * Sequential color scale for shelter ratio on dark map background.
+ * Actual data range is 0–0.25, so we normalize to that domain.
+ * 5-stop scale with strong perceptual steps:
+ *   0%  → deep crimson  (178, 24, 43)   — alarm
+ *   6%  → burnt coral   (214, 96, 77)   — warning
+ *  10%  → warm amber    (244, 165, 96)  — caution
+ *  16%  → pale gold     (253, 219, 164) — moderate
+ *  24%+ → soft ivory    (254, 245, 224) — adequate
+ */
+const Q3_COLOR_STOPS = [
+  { t: 0.00, r: 178, g: 24,  b: 43  },
+  { t: 0.06, r: 214, g: 96,  b: 77  },
+  { t: 0.10, r: 244, g: 165, b: 96  },
+  { t: 0.16, r: 253, g: 219, b: 164 },
+  { t: 0.24, r: 254, g: 245, b: 224 },
+];
+
 function q3ShelterSeqColor(ratio) {
-  const t = Math.max(0, Math.min(1, ratio));
-  // Multi-stop: 0=bright red (220,50,32) → 0.5=orange (245,166,80) → 1=cream (255,248,225)
-  let r, g, b;
-  if (t < 0.5) {
-    const p = t / 0.5;
-    r = Math.round(220 + p * 25);
-    g = Math.round(50 + p * 116);
-    b = Math.round(32 + p * 48);
-  } else {
-    const p = (t - 0.5) / 0.5;
-    r = Math.round(245 + p * 10);
-    g = Math.round(166 + p * 82);
-    b = Math.round(80 + p * 145);
+  const v = Math.max(0, Math.min(0.25, ratio));
+  const stops = Q3_COLOR_STOPS;
+  // Find bracket
+  if (v <= stops[0].t) return `rgb(${stops[0].r},${stops[0].g},${stops[0].b})`;
+  for (let i = 1; i < stops.length; i++) {
+    if (v <= stops[i].t) {
+      const p = (v - stops[i - 1].t) / (stops[i].t - stops[i - 1].t);
+      const r = Math.round(stops[i - 1].r + p * (stops[i].r - stops[i - 1].r));
+      const g = Math.round(stops[i - 1].g + p * (stops[i].g - stops[i - 1].g));
+      const b = Math.round(stops[i - 1].b + p * (stops[i].b - stops[i - 1].b));
+      return `rgb(${r},${g},${b})`;
+    }
   }
-  return `rgb(${r},${g},${b})`;
+  const last = stops[stops.length - 1];
+  return `rgb(${last.r},${last.g},${last.b})`;
 }
 
 function q3ShelterSeqRGBA(ratio, alpha) {
@@ -168,7 +185,7 @@ function addQ3Choropleth() {
     source: 'q3-regions',
     paint: {
       'fill-color': ['get', '_shelterColor'],
-      'fill-opacity': ['case', ['==', ['get', '_hasShelterData'], 1], 0.5, 0.05],
+      'fill-opacity': ['case', ['==', ['get', '_hasShelterData'], 1], 0.55, 0.05],
     },
   });
 
@@ -265,9 +282,9 @@ function addQ3Legend() {
     <div style="margin-bottom:10px;">
       <div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Polygon Color = Shelter Ratio</div>
       <div style="display:flex;align-items:center;gap:6px;">
-        <span style="font-size:10px;color:${q3ShelterSeqColor(0)};">Low</span>
-        <div style="flex:1;height:8px;border-radius:4px;background:linear-gradient(to right, ${q3ShelterSeqColor(0)}, ${q3ShelterSeqColor(0.25)}, ${q3ShelterSeqColor(0.5)}, ${q3ShelterSeqColor(0.75)}, ${q3ShelterSeqColor(1)});"></div>
-        <span style="font-size:10px;color:${q3ShelterSeqColor(1)};">High</span>
+        <span style="font-size:10px;color:${q3ShelterSeqColor(0)};">0%</span>
+        <div style="flex:1;height:10px;border-radius:5px;background:linear-gradient(to right, ${Q3_COLOR_STOPS.map(s => q3ShelterSeqColor(s.t)).join(', ')});"></div>
+        <span style="font-size:10px;color:${q3ShelterSeqColor(0.24)};">24%</span>
       </div>
     </div>
     <div style="height:1px;background:var(--border);margin:8px 0;"></div>
