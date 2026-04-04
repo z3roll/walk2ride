@@ -280,29 +280,27 @@ function renderQ2Regional() {
   const services = window.SERVICES;
   if (!services || !services.length) return;
 
-  // Schools by planning area (top 8)
-  const schoolsByArea = {};
-  const healthByArea = {};
+  // Group by planning area for each type
+  const byTypeArea = { School: {}, Healthcare: {}, HDB: {}, Commercial: {} };
   services.forEach(s => {
-    if (s.type === 'School') {
-      if (!schoolsByArea[s.planning_area]) schoolsByArea[s.planning_area] = [];
-      schoolsByArea[s.planning_area].push(s);
-    }
-    if (s.type === 'Healthcare') {
-      if (!healthByArea[s.planning_area]) healthByArea[s.planning_area] = [];
-      healthByArea[s.planning_area].push(s);
-    }
+    if (!byTypeArea[s.type]) return;
+    if (!byTypeArea[s.type][s.planning_area]) byTypeArea[s.type][s.planning_area] = [];
+    byTypeArea[s.type][s.planning_area].push(s);
   });
 
-  const topSchoolAreas = Object.entries(schoolsByArea)
-    .sort((a, b) => b[1].length - a[1].length)
-    .slice(0, 8)
-    .map(e => e[0]);
+  const topAreas = {};
+  for (const type of Object.keys(byTypeArea)) {
+    topAreas[type] = Object.entries(byTypeArea[type])
+      .sort((a, b) => b[1].length - a[1].length)
+      .slice(0, 8)
+      .map(e => e[0]);
+  }
 
-  const topHealthAreas = Object.entries(healthByArea)
-    .sort((a, b) => b[1].length - a[1].length)
-    .slice(0, 8)
-    .map(e => e[0]);
+  // Keep legacy aliases for compatibility
+  const schoolsByArea = byTypeArea.School;
+  const healthByArea = byTypeArea.Healthcare;
+  const topSchoolAreas = topAreas.School;
+  const topHealthAreas = topAreas.Healthcare;
 
   // Distinct colors per area
   const AREA_PALETTE = ['#4fc3f7','#ffeb3b','#ef6c00','#ce93d8','#4caf50','#ff7043','#26c6da','#ec407a'];
@@ -359,7 +357,26 @@ function renderQ2Regional() {
     'Healthcare — Shelter Ratio by Planning Area (Top 8)'
   );
 
+  // HDB by planning area
+  const hdbOpt = buildViolinOption(
+    topAreas.HDB.map(a => a.charAt(0) + a.slice(1).toLowerCase()),
+    (() => { const m = {}; topAreas.HDB.forEach(a => { m[a.charAt(0) + a.slice(1).toLowerCase()] = byTypeArea.HDB[a]; }); return m; })(),
+    (() => { const m = {}; topAreas.HDB.forEach((a, i) => { m[a.charAt(0) + a.slice(1).toLowerCase()] = AREA_PALETTE[i % AREA_PALETTE.length]; }); return m; })(),
+    'HDB — Shelter Ratio by Planning Area (Top 8)'
+  );
+
+  // Commercial by planning area
+  const commOpt = buildViolinOption(
+    topAreas.Commercial.map(a => a.charAt(0) + a.slice(1).toLowerCase()),
+    (() => { const m = {}; topAreas.Commercial.forEach(a => { m[a.charAt(0) + a.slice(1).toLowerCase()] = byTypeArea.Commercial[a]; }); return m; })(),
+    (() => { const m = {}; topAreas.Commercial.forEach((a, i) => { m[a.charAt(0) + a.slice(1).toLowerCase()] = AREA_PALETTE[i % AREA_PALETTE.length]; }); return m; })(),
+    'Commercial — Shelter Ratio by Planning Area (Top 8)'
+  );
+
   // Store for toggling + area name mapping
+  window._q2RegionalOpts = { school: schoolOpt, health: healthOpt, hdb: hdbOpt, commercial: commOpt };
+  window._q2RegionalAreas = { school: topSchoolAreas, health: topHealthAreas, hdb: topAreas.HDB, commercial: topAreas.Commercial };
+  window._q2RegionalTypeMap = { school: 'School', health: 'Healthcare', hdb: 'HDB', commercial: 'Commercial' };
   window._q2RegionalSchoolOpt = schoolOpt;
   window._q2RegionalHealthOpt = healthOpt;
   window._q2RegionalSchoolAreas = topSchoolAreas;
@@ -384,11 +401,11 @@ function setupQ2RegionalClick() {
     }
     if (catIdx < 0 || catIdx >= 8) return;
 
-    const isSchool = window._q2RegionalCurrentType === 'school';
-    const areas = isSchool ? window._q2RegionalSchoolAreas : window._q2RegionalHealthAreas;
-    const type = isSchool ? 'School' : 'Healthcare';
-    if (catIdx < areas.length) {
-      openQ2Map(areas[catIdx], type);
+    const curType = window._q2RegionalCurrentType;
+    const areas = window._q2RegionalAreas && window._q2RegionalAreas[curType];
+    const typeLabel = window._q2RegionalTypeMap && window._q2RegionalTypeMap[curType];
+    if (areas && typeLabel && catIdx < areas.length) {
+      openQ2Map(areas[catIdx], typeLabel);
     }
   });
 }
@@ -399,11 +416,8 @@ function q2SwitchRegional(type) {
   });
   if (!q2RegionalChart) return;
   window._q2RegionalCurrentType = type;
-  if (type === 'school' && window._q2RegionalSchoolOpt) {
-    q2RegionalChart.setOption(window._q2RegionalSchoolOpt, true);
-  } else if (type === 'health' && window._q2RegionalHealthOpt) {
-    q2RegionalChart.setOption(window._q2RegionalHealthOpt, true);
-  }
+  const opt = window._q2RegionalOpts && window._q2RegionalOpts[type];
+  if (opt) q2RegionalChart.setOption(opt, true);
   setupQ2RegionalClick();
 }
 
@@ -478,6 +492,8 @@ function renderQ2Sidebar() {
       <div class="view-tabs" style="margin-bottom:12px;">
         <button class="view-tab q2-regional-tab active" data-rtype="school" onclick="q2SwitchRegional('school')">Schools</button>
         <button class="view-tab q2-regional-tab" data-rtype="health" onclick="q2SwitchRegional('health')">Healthcare</button>
+        <button class="view-tab q2-regional-tab" data-rtype="hdb" onclick="q2SwitchRegional('hdb')">HDB</button>
+        <button class="view-tab q2-regional-tab" data-rtype="commercial" onclick="q2SwitchRegional('commercial')">Commercial</button>
       </div>
 
       <div class="narrative">
