@@ -217,7 +217,7 @@ function buildViolinOption(categories, dataByCategory, colors, title) {
       top: 12,
       textStyle: { fontSize: 14, fontWeight: 600, color: '#ccc' },
     },
-    grid: { left: 70, right: 40, top: 55, bottom: 80 },
+    grid: { left: 70, right: 40, top: 55, bottom: 60 },
     tooltip: {
       trigger: 'item',
       backgroundColor: '#1e222bf0',
@@ -235,7 +235,7 @@ function buildViolinOption(categories, dataByCategory, colors, title) {
     xAxis: {
       type: 'category',
       data: categories,
-      axisLabel: { color: '#888', fontSize: 11, fontWeight: 600, interval: 0, rotate: 30 },
+      axisLabel: { color: '#888', fontSize: 10, fontWeight: 600, interval: 0 },
       axisLine: { lineStyle: { color: '#2a2f3a' } },
       splitLine: { show: false },
     },
