@@ -20,47 +20,9 @@ function q3TitleCase(s) {
   return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
 }
 
-/*
- * Urgency color scale: composite of vulnerability × shelter deficit.
- * urgency 0 (low vuln or good shelter) → teal/cool
- * urgency 1 (high vuln + poor shelter) → bright red/crimson
- *
- * 5-stop diverging scale on dark background:
- *   0.0 → muted teal   (72, 191, 180)  — no concern
- *   0.25→ pale sage     (170, 210, 160) — low priority
- *   0.5 → warm amber    (245, 195, 100) — moderate
- *   0.75→ burnt coral   (230, 110, 65)  — high priority
- *   1.0 → crimson       (210, 40, 40)   — critical
- */
-const Q3_URGENCY_STOPS = [
-  { t: 0.0,  r: 72,  g: 191, b: 180 },
-  { t: 0.25, r: 170, g: 210, b: 160 },
-  { t: 0.5,  r: 245, g: 195, b: 100 },
-  { t: 0.75, r: 230, g: 110, b: 65  },
-  { t: 1.0,  r: 210, g: 40,  b: 40  },
-];
-
+/* Reuse mismatchColor from common.js: green(0) → yellow → orange → red(1) */
 function q3UrgencyColor(urgency) {
-  const v = Math.max(0, Math.min(1, urgency));
-  const stops = Q3_URGENCY_STOPS;
-  if (v <= stops[0].t) return `rgb(${stops[0].r},${stops[0].g},${stops[0].b})`;
-  for (let i = 1; i < stops.length; i++) {
-    if (v <= stops[i].t) {
-      const p = (v - stops[i - 1].t) / (stops[i].t - stops[i - 1].t);
-      const r = Math.round(stops[i - 1].r + p * (stops[i].r - stops[i - 1].r));
-      const g = Math.round(stops[i - 1].g + p * (stops[i].g - stops[i - 1].g));
-      const b = Math.round(stops[i - 1].b + p * (stops[i].b - stops[i - 1].b));
-      return `rgb(${r},${g},${b})`;
-    }
-  }
-  const last = stops[stops.length - 1];
-  return `rgb(${last.r},${last.g},${last.b})`;
-}
-
-function q3UrgencyRGBA(urgency, alpha) {
-  const c = q3UrgencyColor(urgency);
-  const m = c.match(/\d+/g);
-  return `rgba(${m[0]},${m[1]},${m[2]},${alpha})`;
+  return mismatchColor(Math.max(0, Math.min(1, urgency)));
 }
 
 /* Compute normalized urgency score for a data point */
@@ -297,7 +259,7 @@ function addQ3Legend() {
       <div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Area Color = Improvement Urgency</div>
       <div style="display:flex;align-items:center;gap:6px;">
         <span style="font-size:10px;color:${q3UrgencyColor(0)};">Low</span>
-        <div style="flex:1;height:10px;border-radius:5px;background:linear-gradient(to right, ${Q3_URGENCY_STOPS.map(s => q3UrgencyColor(s.t)).join(', ')});"></div>
+        <div style="flex:1;height:10px;border-radius:5px;background:linear-gradient(to right, ${[0,0.25,0.5,0.75,1].map(t => q3UrgencyColor(t)).join(', ')});"></div>
         <span style="font-size:10px;color:${q3UrgencyColor(1)};">Critical</span>
       </div>
       <div style="font-size:9px;color:var(--muted);margin-top:3px;">High Vulnerability × Low Shelter = Red</div>
