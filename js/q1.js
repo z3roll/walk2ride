@@ -340,7 +340,7 @@ function initMap(detail, summary) {
     maxZoom: 18,
   });
 
-  map.on('load', () => { try { console.log('MAP LOADED OK');
+  function onMapReady() { try {
     const geo = detail.geometry || {};
 
     const mc = mismatchColor(summary.mismatch_norm);
@@ -476,7 +476,10 @@ function initMap(detail, summary) {
     const bounds = new maplibregl.LngLatBounds();
     circleCoords.forEach(c => bounds.extend(c));
     map.fitBounds(bounds, { padding: 40 });
-  } catch(err) { console.error('Map load error:', err); } });
+  } catch(err) { console.error('Map load error:', err); } }
+
+  if (map.loaded()) { onMapReady(); }
+  else { map.on('load', onMapReady); }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
