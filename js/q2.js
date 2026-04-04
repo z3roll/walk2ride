@@ -64,7 +64,7 @@ function buildViolinOption(categories, dataByCategory, colors, title) {
   categories.forEach(cat => {
     const vals = (dataByCategory[cat] || []).map(d => d.shelter_ratio * 100);
     if (!vals.length) { kdeResults[cat] = { kde: [], vals }; return; }
-    const bw = Math.max(1.5, std(vals) * 0.4 || 2);
+    const bw = Math.max(2, std(vals) * 0.6 || 3);
     const kdePoints = kde(vals, bw, 60);
     const maxD = Math.max(...kdePoints.map(p => p[1]));
     maxDensityGlobal.push(maxD);
@@ -72,48 +72,51 @@ function buildViolinOption(categories, dataByCategory, colors, title) {
   });
 
   const globalMaxD = Math.max(...maxDensityGlobal, 0.001);
-  const violinHalfWidth = 0.38; // in category index units
+  const violinMaxPx = 45; // max half-width in pixels
 
-  // Custom violin series
-  series.push({
-    type: 'custom',
-    renderItem: function(params, api) {
-      const catIdx = params.dataIndex;
-      const cat = categories[catIdx];
-      const info = kdeResults[cat];
-      if (!info || !info.kde.length) return;
+  // Custom violin series — one per category for correct pixel mapping
+  categories.forEach((cat, catIdx) => {
+    const info = kdeResults[cat];
+    if (!info || !info.kde.length) return;
 
-      const normalizer = info.maxD || globalMaxD;
-      const points = [];
-      // Right side
-      for (let i = 0; i < info.kde.length; i++) {
-        const [y, d] = info.kde[i];
-        const normD = (d / normalizer) * violinHalfWidth;
-        const px = api.coord([catIdx + normD, y]);
-        points.push(px);
-      }
-      // Left side (mirror)
-      for (let i = info.kde.length - 1; i >= 0; i--) {
-        const [y, d] = info.kde[i];
-        const normD = (d / normalizer) * violinHalfWidth;
-        const px = api.coord([catIdx - normD, y]);
-        points.push(px);
-      }
+    series.push({
+      type: 'custom',
+      renderItem: function(params, api) {
+        // Get the center x pixel for this category
+        const centerPx = api.coord([catIdx, 0]);
+        const cx = centerPx[0];
 
-      return {
-        type: 'polygon',
-        shape: { points },
-        style: {
-          fill: colors[cat] || '#888',
-          opacity: 0.25,
-          stroke: colors[cat] || '#888',
-          lineWidth: 1.5,
-          opacity: 0.35,
-        },
-      };
-    },
-    data: categories.map((_, i) => [i]),
-    z: 1,
+        const normalizer = globalMaxD;
+        const points = [];
+        // Right side
+        for (let i = 0; i < info.kde.length; i++) {
+          const [y, d] = info.kde[i];
+          const widthPx = (d / normalizer) * violinMaxPx;
+          const yPx = api.coord([0, y])[1];
+          points.push([cx + widthPx, yPx]);
+        }
+        // Left side (mirror)
+        for (let i = info.kde.length - 1; i >= 0; i--) {
+          const [y, d] = info.kde[i];
+          const widthPx = (d / normalizer) * violinMaxPx;
+          const yPx = api.coord([0, y])[1];
+          points.push([cx - widthPx, yPx]);
+        }
+
+        return {
+          type: 'polygon',
+          shape: { points },
+          style: {
+            fill: colors[cat] || '#888',
+            opacity: 0.3,
+            stroke: colors[cat] || '#888',
+            lineWidth: 1.5,
+          },
+        };
+      },
+      data: [[catIdx, 0]],
+      z: 1,
+    });
   });
 
   // Boxplot-like elements (median line, Q1-Q3 box)
@@ -130,8 +133,10 @@ function buildViolinOption(categories, dataByCategory, colors, title) {
     series.push({
       type: 'custom',
       renderItem: function(params, api) {
-        const leftPx = api.coord([catIdx - 0.12, q1]);
-        const rightPx = api.coord([catIdx + 0.12, q3]);
+        const center = api.coord([catIdx, q1]);
+        const topPx = api.coord([catIdx, q3]);
+        const leftPx = [center[0] - 12, center[1]];
+        const rightPx = [center[0] + 12, topPx[1]];
         return {
           type: 'rect',
           shape: {
@@ -156,8 +161,9 @@ function buildViolinOption(categories, dataByCategory, colors, title) {
     series.push({
       type: 'custom',
       renderItem: function(params, api) {
-        const left = api.coord([catIdx - 0.15, med]);
-        const right = api.coord([catIdx + 0.15, med]);
+        const center = api.coord([catIdx, med]);
+        const left = [center[0] - 16, center[1]];
+        const right = [center[0] + 16, center[1]];
         return {
           type: 'line',
           shape: { x1: left[0], y1: left[1], x2: right[0], y2: right[1] },
