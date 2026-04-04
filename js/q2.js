@@ -582,12 +582,13 @@ function q2ToggleZoomService(serviceName) {
     q2ZoomedService = null;
     if (q2MapAreaBounds) q2Map.fitBounds(q2MapAreaBounds, { padding: 50 });
     // Remove zoom layers
-    ['zoom-ring','zoom-poly','zoom-fp','zoom-cl','zoom-br'].forEach(id => {
+    ['zoom-ring','zoom-poly','zoom-fp','zoom-cl','zoom-br','zoom-svc'].forEach(id => {
       [id, id+'-line', id+'-fill'].forEach(lid => {
         if (q2Map.getLayer(lid)) q2Map.removeLayer(lid);
       });
       if (q2Map.getSource(id)) q2Map.removeSource(id);
     });
+    if (window._q2ZoomMarker) { window._q2ZoomMarker.remove(); window._q2ZoomMarker = null; }
     // Restore all layer opacities
     q2Map.setPaintProperty('services-dot', 'circle-opacity', 0.9);
     q2Map.setPaintProperty('services-dot', 'circle-stroke-opacity', 1);
@@ -605,12 +606,14 @@ function q2ToggleZoomService(serviceName) {
     if (!svc) return;
 
     // Remove previous zoom layers
-    ['zoom-ring','zoom-poly','zoom-fp','zoom-cl','zoom-br'].forEach(id => {
+    ['zoom-ring','zoom-poly','zoom-fp','zoom-cl','zoom-br','zoom-svc'].forEach(id => {
       [id, id+'-line', id+'-fill'].forEach(lid => {
         if (q2Map.getLayer(lid)) q2Map.removeLayer(lid);
       });
       if (q2Map.getSource(id)) q2Map.removeSource(id);
     });
+    // Remove previous HTML marker
+    if (window._q2ZoomMarker) { window._q2ZoomMarker.remove(); window._q2ZoomMarker = null; }
 
     // Dim everything
     q2Map.setPaintProperty('services-dot', 'circle-opacity', 0);
@@ -784,6 +787,18 @@ function q2ToggleZoomService(serviceName) {
         q2Map.on('mouseleave', 'zoom-br', () => { q2Map.getCanvas().style.cursor = ''; zBrPopup.remove(); });
       }
     }
+
+    // Service point marker
+    q2Map.addSource('zoom-svc', { type: 'geojson', data: { type: 'Feature', geometry: { type: 'Point', coordinates: [lng, lat] }, properties: {} } });
+    q2Map.addLayer({ id: 'zoom-svc', type: 'circle', source: 'zoom-svc', paint: { 'circle-radius': 8, 'circle-color': svcColor, 'circle-stroke-width': 3, 'circle-stroke-color': '#fff' } });
+
+    // Service name label as HTML marker
+    const labelEl = document.createElement('div');
+    labelEl.style.cssText = 'font-size:13px;font-weight:700;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,0.9),0 0 8px rgba(0,0,0,0.7);white-space:nowrap;pointer-events:none;padding:2px 6px;';
+    labelEl.textContent = serviceName;
+    window._q2ZoomMarker = new maplibregl.Marker({ element: labelEl, anchor: 'bottom', offset: [0, -14] })
+      .setLngLat([lng, lat])
+      .addTo(q2Map);
 
     // Zoom to circle
     const bounds = new maplibregl.LngLatBounds();
