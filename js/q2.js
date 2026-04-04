@@ -271,6 +271,19 @@ function renderQ2Chart() {
       'Shelter Ratio Distribution by Service Type — ' + services.length + ' Services'),
     true
   );
+
+  // Click a type violin → switch to Regional tab with that type selected
+  const typeToRegional = { 0: 'school', 1: 'health', 2: 'hdb', 3: 'commercial' };
+  q2Chart.off('click');
+  q2Chart.on('click', params => {
+    let catIdx = -1;
+    if (params.data && params.data._catIdx !== undefined) catIdx = params.data._catIdx;
+    else if (Array.isArray(params.data)) catIdx = Math.round(params.data[0]);
+    else if (params.data && params.data.value) catIdx = Math.round(Array.isArray(params.data.value) ? params.data.value[0] : params.data.value);
+    if (catIdx < 0 || catIdx > 3) return;
+    q2SwitchTab('regional');
+    q2SwitchRegional(typeToRegional[catIdx]);
+  });
 }
 
 /* ═══════════════════════════════════════════════════════════════════
