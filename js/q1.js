@@ -75,7 +75,7 @@ function renderChart(highlightGroup) {
           <span style="color:#555;font-size:10px;">Click to view on map →</span>`;
       },
     },
-    xAxis: { name:'Daily Ridership (pax/day)', nameLocation:'middle', nameGap:36, nameTextStyle:{fontSize:12,color:'#888'}, type:'value',
+    xAxis: { name:'Daily Ridership (pax/day)', nameLocation:'middle', nameGap:36, nameTextStyle:{fontSize:12,color:'#888'}, type:'value', max:150000,
       axisLabel:{formatter:v=>v>=1000?(v/1000).toFixed(0)+'K':v,color:'#666',fontSize:10}, splitLine:{lineStyle:{color:'#1c2029'}}, axisLine:{lineStyle:{color:'#2a2f3a'}} },
     yAxis: { name:'Sheltered Coverage (%)', nameLocation:'middle', nameGap:48, nameTextStyle:{fontSize:12,color:'#888'}, type:'value', max:80,
       axisLabel:{formatter:v=>v+'%',color:'#666',fontSize:10}, splitLine:{lineStyle:{color:'#1c2029'}}, axisLine:{lineStyle:{color:'#2a2f3a'}} },
@@ -84,16 +84,17 @@ function renderChart(highlightGroup) {
       emphasis:{ itemStyle:{borderColor:'#fff',borderWidth:2.5} },
       markLine:{ silent:true, lineStyle:{color:'rgba(255,255,255,0.08)',type:'dashed',width:1}, data:[{xAxis:xMed},{yAxis:yMed}], label:{show:false}, symbol:'none' },
       markArea:{ silent:true, data:[
-        [{xAxis:xMed,yAxis:yMed,itemStyle:{color:'rgba(76,175,80,0.04)'}},{xAxis:'max',yAxis:80}],
-        [{xAxis:xMed,yAxis:0,itemStyle:{color:'rgba(239,83,80,0.05)'}},{xAxis:'max',yAxis:yMed}],
-        [{xAxis:0,yAxis:yMed,itemStyle:{color:'rgba(79,195,247,0.03)'}},{xAxis:xMed,yAxis:80}],
+        [{xAxis:xMed,yAxis:yMed,itemStyle:{color:'rgba(76,175,80,0.08)'}},{xAxis:150000,yAxis:80}],
+        [{xAxis:xMed,yAxis:0,itemStyle:{color:'rgba(239,83,80,0.09)'}},{xAxis:150000,yAxis:yMed}],
+        [{xAxis:0,yAxis:yMed,itemStyle:{color:'rgba(79,195,247,0.06)'}},{xAxis:xMed,yAxis:80}],
+        [{xAxis:0,yAxis:0,itemStyle:{color:'rgba(255,255,255,0.04)'}},{xAxis:xMed,yAxis:yMed}],
       ], label:{show:false} },
     }],
     graphic: [
-      {type:'text',right:55,top:48,style:{text:'Well-served',fill:'rgba(76,175,80,0.55)',fontSize:15,fontWeight:700}},
-      {type:'text',right:55,bottom:68,style:{text:'Demand–Supply\nMismatch Zone',fill:'rgba(239,83,80,0.55)',fontSize:15,fontWeight:700,lineHeight:20}},
-      {type:'text',left:80,top:48,style:{text:'Over-provisioned?',fill:'rgba(79,195,247,0.5)',fontSize:15,fontWeight:700}},
-      {type:'text',left:80,bottom:68,style:{text:'Low priority',fill:'rgba(255,255,255,0.22)',fontSize:14,fontWeight:600}},
+      {type:'text',right:55,top:68,style:{text:'Well-served',fill:'rgba(76,175,80,0.55)',fontSize:15,fontWeight:700}},
+      {type:'text',right:55,bottom:70,style:{text:'Demand–Supply\nMismatch Zone',fill:'rgba(239,83,80,0.55)',fontSize:15,fontWeight:700,lineHeight:20}},
+      {type:'text',left:80,top:68,style:{text:'Over-provisioned?',fill:'rgba(79,195,247,0.5)',fontSize:15,fontWeight:700}},
+      {type:'text',left:80,bottom:70,style:{text:'Low priority',fill:'rgba(255,255,255,0.22)',fontSize:14,fontWeight:600}},
     ],
     dataZoom:[{type:'inside',xAxisIndex:0},{type:'inside',yAxisIndex:0}],
   }, true);
