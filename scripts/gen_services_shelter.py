@@ -39,7 +39,7 @@ OUTPUT = BASE / "scripts" / "output" / "services_shelter.json"
 
 CRS_WGS = "EPSG:4326"
 CRS_SVY = "EPSG:3414"
-RADIUS_POINT = 400  # metres for point POIs
+RADIUS_POINT = 200  # metres for point POIs
 RADIUS_POLY_EXTRA = 100  # extra buffer beyond enclosing circle for polygon POIs
 LINKWAY_BUFFER = 3  # metres – slight misalignment tolerance
 HDB_SAMPLE_SIZE = 2000

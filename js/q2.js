@@ -640,7 +640,7 @@ function q2ToggleZoomService(serviceName) {
     const polyMatch = Object.entries(allPolys).find(([k]) => k.startsWith(serviceName + '_'));
 
     // Compute minimum enclosing circle of polygon + 100m
-    let circleLat = lat, circleLng = lng, circleR = 100;
+    let circleLat = lat, circleLng = lng, circleR = 200;
     let polyCoords = null;
     if (polyMatch) {
       polyCoords = polyMatch[1];
