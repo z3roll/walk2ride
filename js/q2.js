@@ -609,7 +609,7 @@ function q2ToggleZoomService(serviceName) {
     if (q2Map.getLayer('area-fill')) q2Map.setPaintProperty('area-fill', 'fill-opacity', 0.05);
     if (q2Map.getLayer('area-line')) q2Map.setPaintProperty('area-line', 'line-opacity', 0.6);
     renderQ2MapLegend(q2MapCurrentType, false);
-    document.querySelectorAll('.q2-svc-row').forEach(el => el.style.background = '');
+    document.querySelectorAll('.q2-svc-row').forEach(el => el.classList.remove('selected'));
   } else {
     // Zoom to this service
     q2ZoomedService = serviceName;
@@ -724,7 +724,7 @@ function q2ToggleZoomService(serviceName) {
     // Highlight sidebar row + scroll into view
     document.querySelectorAll('.q2-svc-row').forEach(el => {
       const isMatch = el.dataset.name === serviceName;
-      el.style.background = isMatch ? 'var(--card)' : '';
+      el.classList.toggle('selected', isMatch);
       if (isMatch) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     });
   }
@@ -779,11 +779,7 @@ function renderQ2MapLegend(serviceType, isZoomed) {
       <div style="width:10px;height:10px;border-radius:50%;background:#888;border:2px solid #fff;"></div>
       <span>${serviceType} facility</span>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-      <div style="width:14px;height:14px;border-radius:50%;border:2px dashed var(--accent);box-sizing:border-box;"></div>
-      <span>Planning Area</span>
-    </div>
-    ${isZoomed ? `<div style="height:1px;background:var(--border);margin:6px 0;"></div>
+    <div style="height:1px;background:var(--border);margin:6px 0;"></div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
       <div style="width:18px;height:2px;background:#bbb;border-radius:1px;"></div> <span>Footpath</span>
     </div>
@@ -793,7 +789,7 @@ function renderQ2MapLegend(serviceType, isZoomed) {
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
       <div style="width:18px;height:3px;background:#ff9800;border-radius:2px;"></div> <span>Overhead Bridge</span>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+    ${isZoomed ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
       <div style="width:14px;height:14px;border:2px solid #fff;border-radius:3px;box-sizing:border-box;"></div> <span>Building</span>
     </div>` : ''}
   `;
