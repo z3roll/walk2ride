@@ -428,19 +428,19 @@ function renderQ3AreaDetail(areaData) {
       <div class="title">Demographic Breakdown</div>
       <div class="metric-row">
         <span class="metric-label">Elderly (65+)</span>
-        <div class="metric-bar-bg"><div class="metric-bar" style="width:${(d.elderly_ratio * 100 / 0.3 * 100)}%;background:#ff9800;"></div></div>
+        <div class="metric-bar-bg"><div class="metric-bar" style="width:${Math.min(d.elderly_ratio / 0.3 * 100, 100)}%;background:#ff9800;"></div></div>
         <span class="metric-value">${d.elderly_count.toLocaleString()}</span>
         <span style="font-size:10px;color:var(--muted);margin-left:4px;">(${(d.elderly_ratio * 100).toFixed(1)}%)</span>
       </div>
       <div class="metric-row">
         <span class="metric-label">Children (&lt;15)</span>
-        <div class="metric-bar-bg"><div class="metric-bar" style="width:${(d.children_ratio * 100 / 0.3 * 100)}%;background:#4fc3f7;"></div></div>
+        <div class="metric-bar-bg"><div class="metric-bar" style="width:${Math.min(d.children_ratio / 0.2 * 100, 100)}%;background:#4fc3f7;"></div></div>
         <span class="metric-value">${d.children_count.toLocaleString()}</span>
         <span style="font-size:10px;color:var(--muted);margin-left:4px;">(${(d.children_ratio * 100).toFixed(1)}%)</span>
       </div>
       <div class="metric-row" style="border-color:var(--accent);">
         <span class="metric-label" style="font-weight:600;">Total Vulnerable</span>
-        <div class="metric-bar-bg"><div class="metric-bar" style="width:${(d.vulnerable_ratio * 100 / 0.5 * 100)}%;background:#ce93d8;"></div></div>
+        <div class="metric-bar-bg"><div class="metric-bar" style="width:${Math.min(d.vulnerable_ratio / 0.4 * 100, 100)}%;background:#ce93d8;"></div></div>
         <span class="metric-value" style="color:#ce93d8;">${totalVuln.toLocaleString()}</span>
         <span style="font-size:10px;color:var(--muted);margin-left:4px;">(${(d.vulnerable_ratio * 100).toFixed(1)}%)</span>
       </div>
