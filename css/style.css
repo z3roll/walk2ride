@@ -164,6 +164,18 @@
   .q2-sidebar-header h1 { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; line-height: 1.4; }
   .q2-sidebar-header .sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
 
+  /* ── Resizable sidebar handle ── */
+  .resize-handle {
+    width: 5px; cursor: col-resize; background: transparent; flex-shrink: 0;
+    position: relative; z-index: 10; transition: background 0.15s;
+  }
+  .resize-handle:hover, .resize-handle.dragging { background: var(--accent); }
+  .resize-handle::after {
+    content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 3px; height: 32px; border-radius: 2px; background: var(--border); transition: background 0.15s;
+  }
+  .resize-handle:hover::after, .resize-handle.dragging::after { background: var(--accent); }
+
   ::-webkit-scrollbar { width: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }

@@ -55,3 +55,50 @@ async function loadData() {
 }
 
 loadData();
+
+/* ═══════════════════════════════════════════════════════════════════
+   Resizable sidebar — drag handle logic
+   ═══════════════════════════════════════════════════════════════════ */
+(function() {
+  document.querySelectorAll('.resize-handle').forEach(handle => {
+    const targetId = handle.dataset.target;
+    let dragging = false, startX = 0, startW = 0;
+
+    handle.addEventListener('mousedown', e => {
+      const sidebar = document.getElementById(targetId);
+      if (!sidebar) return;
+      dragging = true;
+      startX = e.clientX;
+      startW = sidebar.offsetWidth;
+      handle.classList.add('dragging');
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+      e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', e => {
+      if (!dragging) return;
+      const sidebar = document.getElementById(targetId);
+      if (!sidebar) return;
+      const delta = startX - e.clientX; // dragging left = wider sidebar
+      const newW = Math.max(260, Math.min(700, startW + delta));
+      sidebar.style.width = newW + 'px';
+      // Trigger chart resize
+      if (typeof chart !== 'undefined' && chart) chart.resize();
+      if (typeof q2Chart !== 'undefined' && q2Chart) q2Chart.resize();
+      if (typeof q2RegionalChart !== 'undefined' && q2RegionalChart) q2RegionalChart.resize();
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (!dragging) return;
+      dragging = false;
+      handle.classList.remove('dragging');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      // Final resize
+      if (typeof chart !== 'undefined' && chart) chart.resize();
+      if (typeof q2Chart !== 'undefined' && q2Chart) q2Chart.resize();
+      if (typeof q2RegionalChart !== 'undefined' && q2RegionalChart) q2RegionalChart.resize();
+    });
+  });
+})();
