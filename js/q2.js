@@ -634,51 +634,40 @@ function q2ToggleZoomService(serviceName) {
 
     const lat = svc.lat, lng = svc.lng;
     const svcColor = shelterColor(svc.shelter_ratio);
-
-    // Find service polygon
     const infra = window.AREA_INFRA;
     const polyKey = q2MapCurrentType === 'School' ? '_school_polygons' : '_health_polygons';
     const allPolys = infra[polyKey] || {};
     const polyMatch = Object.entries(allPolys).find(([k]) => k.startsWith(serviceName + '_'));
 
-    // Build 100m ring: if polygon exists, buffer polygon outline; otherwise circle from centroid
-    let ringCoords, polyCoords;
+    // Compute minimum enclosing circle of polygon + 100m
+    let circleLat = lat, circleLng = lng, circleR = 100;
+    let polyCoords = null;
     if (polyMatch) {
       polyCoords = polyMatch[1];
-      // Buffer each vertex of polygon outward by 100m to approximate polygon.buffer(100m)
-      const R = 100;
-      const centerLat = polyCoords.reduce((s,c) => s + c[1], 0) / polyCoords.length;
-      const dLatPer = 1 / 111320;
-      const dLngPer = 1 / (111320 * Math.cos(centerLat * Math.PI / 180));
-      // Generate buffered polygon: for each edge, offset outward, then connect with arcs at corners
-      // Simplified approach: sample points on polygon boundary, expand each outward from centroid
+      // Find bounding circle: center = centroid, radius = max distance to any vertex
       const cx = polyCoords.reduce((s,c) => s + c[0], 0) / polyCoords.length;
-      const cy = centerLat;
-      ringCoords = [];
-      // Walk around polygon and add arc at each vertex
-      for (let i = 0; i < polyCoords.length - 1; i++) {
-        const [px, py] = polyCoords[i];
-        const dx = (px - cx), dy = (py - cy);
-        const dist = Math.sqrt((dx/dLngPer)**2 + (dy/dLatPer)**2);
-        if (dist === 0) continue;
-        const scale = (dist + R) / dist;
-        ringCoords.push([cx + dx * scale, cy + dy * scale]);
-      }
-      ringCoords.push(ringCoords[0]); // close ring
-    } else {
-      // Fallback: circle from centroid
-      const R = 100;
-      ringCoords = [];
-      for (let i = 0; i <= 64; i++) {
-        const a = (i / 64) * Math.PI * 2;
-        ringCoords.push([
-          lng + (R / (111320 * Math.cos(lat * Math.PI / 180))) * Math.sin(a),
-          lat + (R / 111320) * Math.cos(a)
-        ]);
-      }
+      const cy = polyCoords.reduce((s,c) => s + c[1], 0) / polyCoords.length;
+      const cosLat = Math.cos(cy * Math.PI / 180);
+      let maxDist = 0;
+      polyCoords.forEach(c => {
+        const dx = (c[0] - cx) * 111320 * cosLat;
+        const dy = (c[1] - cy) * 111320;
+        const d = Math.sqrt(dx*dx + dy*dy);
+        if (d > maxDist) maxDist = d;
+      });
+      circleLat = cy; circleLng = cx;
+      circleR = maxDist + 100; // enclosing radius + 100m
     }
 
-    // Draw ring
+    // Draw circle
+    const ringCoords = [];
+    for (let i = 0; i <= 64; i++) {
+      const a = (i / 64) * Math.PI * 2;
+      ringCoords.push([
+        circleLng + (circleR / (111320 * Math.cos(circleLat * Math.PI / 180))) * Math.sin(a),
+        circleLat + (circleR / 111320) * Math.cos(a)
+      ]);
+    }
     q2Map.addSource('zoom-ring', { type: 'geojson', data: { type: 'Feature', geometry: { type: 'Polygon', coordinates: [ringCoords] } } });
     q2Map.addLayer({ id: 'zoom-ring-fill', type: 'fill', source: 'zoom-ring', paint: { 'fill-color': svcColor, 'fill-opacity': 0.06 } }, 'services-dot');
     q2Map.addLayer({ id: 'zoom-ring-line', type: 'line', source: 'zoom-ring', paint: { 'line-color': svcColor, 'line-width': 2, 'line-dasharray': [4, 4], 'line-opacity': 0.6 } }, 'services-dot');
@@ -690,29 +679,27 @@ function q2ToggleZoomService(serviceName) {
       q2Map.addLayer({ id: 'zoom-poly-line', type: 'line', source: 'zoom-poly', paint: { 'line-color': '#fff', 'line-width': 2, 'line-opacity': 0.7 } }, 'services-dot');
     }
 
-    // Draw nearby footpath/covered/bridge
+    // Draw only infrastructure INSIDE the circle
     const areaData = infra[q2MapAreaName.toUpperCase()] || infra[q2MapAreaName];
     if (areaData) {
-      // Use ring bounds for filtering
-      const allRingLats = ringCoords.map(c => c[1]);
-      const allRingLngs = ringCoords.map(c => c[0]);
-      const minLat = Math.min(...allRingLats) - 0.001;
-      const maxLat = Math.max(...allRingLats) + 0.001;
-      const minLng = Math.min(...allRingLngs) - 0.001;
-      const maxLng = Math.max(...allRingLngs) + 0.001;
-      function filterInBounds(segs) {
-        return segs.filter(seg => seg.some(c => c[1] >= minLat && c[1] <= maxLat && c[0] >= minLng && c[0] <= maxLng));
+      const cosL = Math.cos(circleLat * Math.PI / 180);
+      function isInCircle(c) {
+        const dx = (c[0] - circleLng) * 111320 * cosL;
+        const dy = (c[1] - circleLat) * 111320;
+        return dx*dx + dy*dy <= circleR * circleR;
       }
-      const nearFp = filterInBounds(areaData.footpaths || []);
-      const nearCl = filterInBounds(areaData.covered_linkways || []);
-      const nearBr = filterInBounds(areaData.overhead_bridges || []);
+      function filterInCircle(segs) {
+        return segs.filter(seg => seg.some(c => isInCircle(c)));
+      }
+      const nearFp = filterInCircle(areaData.footpaths || []);
+      const nearCl = filterInCircle(areaData.covered_linkways || []);
+      const nearBr = filterInCircle(areaData.overhead_bridges || []);
 
       function segsToGeoJSON(segs) {
         return { type: 'FeatureCollection', features: segs.map(coords => ({
           type: 'Feature', geometry: { type: 'LineString', coordinates: coords }, properties: {}
         })) };
       }
-
       if (nearFp.length) {
         q2Map.addSource('zoom-fp', { type: 'geojson', data: segsToGeoJSON(nearFp) });
         q2Map.addLayer({ id: 'zoom-fp', type: 'line', source: 'zoom-fp', paint: { 'line-color': '#bbb', 'line-width': 2, 'line-opacity': 0.5 } }, 'services-dot');
@@ -727,16 +714,18 @@ function q2ToggleZoomService(serviceName) {
       }
     }
 
-    // Zoom to ring area
+    // Zoom to circle
     const bounds = new maplibregl.LngLatBounds();
     ringCoords.forEach(c => bounds.extend(c));
     q2Map.fitBounds(bounds, { padding: 60 });
 
     renderQ2MapLegend(q2MapCurrentType, true);
 
-    // Highlight sidebar row
+    // Highlight sidebar row + scroll into view
     document.querySelectorAll('.q2-svc-row').forEach(el => {
-      el.style.background = el.dataset.name === serviceName ? 'var(--card)' : '';
+      const isMatch = el.dataset.name === serviceName;
+      el.style.background = isMatch ? 'var(--card)' : '';
+      if (isMatch) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     });
   }
 }
@@ -878,6 +867,13 @@ function initQ2Map(services, areaFeature, areaName) {
     });
     q2Map.on('mousemove', 'services-dot', e => { popup.setLngLat(e.lngLat); });
     q2Map.on('mouseleave', 'services-dot', () => { q2Map.getCanvas().style.cursor = ''; popup.remove(); });
+
+    // Click dot to toggle zoom
+    q2Map.on('click', 'services-dot', e => {
+      const name = e.features[0].properties.name;
+      popup.remove();
+      q2ToggleZoomService(name);
+    });
 
     // Fit to area
     if (areaFeature) {
