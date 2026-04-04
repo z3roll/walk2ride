@@ -736,7 +736,8 @@ function initMap(detail, summary) {
         .setHTML(`<div style="font-size:12px;">
           <b style="font-size:14px;">${shortName(summary.station)}</b><br>
           <span style="color:${mc2};">\u25cf</span> Mismatch: <b>${summary.mismatch_norm.toFixed(2)}</b><br>
-          Shelter: <b>${(sr*100).toFixed(1)}%</b> &middot; Ridership: <b>${summary.passenger_volume.toLocaleString()}</b>/day<br>
+          Shelter: <b>${(sr*100).toFixed(1)}%</b><br>
+          Ridership: <b>${summary.passenger_volume.toLocaleString()}</b> pax/day<br>
           Rainfall: <b>${Math.round(summary.rainfall_mm).toLocaleString()}</b> mm/yr</div>`)
         .addTo(map);
     });
