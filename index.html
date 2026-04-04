@@ -86,7 +86,8 @@
 
   <!-- ════════ RQ2 ════════ -->
   <div id="q2" class="rq-content">
-    <div id="q2-content" style="display:flex;flex-direction:row;width:100%;height:100%;">
+    <!-- Q2 Chart view -->
+    <div id="q2-chart-view" style="display:flex;flex-direction:row;width:100%;height:100%;">
       <div id="q2-chart-area">
         <div id="q2-chart"></div>
       </div>
@@ -97,6 +98,22 @@
           <div class="sub">How does shelter ratio vary across service types and planning areas?</div>
         </div>
         <div class="sidebar-scroll" id="q2-sidebar-content"></div>
+      </div>
+    </div>
+    <!-- Q2 Map view -->
+    <div id="q2-map-view" style="display:none;flex-direction:row;width:100%;height:100%;">
+      <div id="q2-map-container" style="flex:1;position:relative;">
+        <button id="q2-back-btn" onclick="q2BackToChart()" style="position:absolute;top:16px;left:16px;z-index:10;padding:8px 18px;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);box-shadow:0 2px 12px rgba(0,0,0,0.4);">&#8592; Back to Chart</button>
+        <div id="q2-map" style="width:100%;height:100%;"></div>
+        <div id="q2-map-legend" style="position:absolute;bottom:20px;left:16px;z-index:10;background:rgba(24,27,34,0.92);border:1px solid var(--border);border-radius:10px;padding:14px 18px;font-size:11px;color:var(--text);box-shadow:0 4px 20px rgba(0,0,0,0.5);min-width:180px;"></div>
+      </div>
+      <div class="resize-handle" data-target="q2-map-sidebar"></div>
+      <div id="q2-map-sidebar" style="width:380px;min-width:340px;background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;">
+        <div class="map-sidebar-header">
+          <h2 id="q2-map-area-name"></h2>
+          <div class="sub" id="q2-map-area-sub"></div>
+        </div>
+        <div class="map-sidebar-scroll" id="q2-map-sidebar-content" style="flex:1;overflow-y:auto;padding:16px 22px 24px;"></div>
       </div>
     </div>
   </div>

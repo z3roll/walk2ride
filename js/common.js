@@ -41,15 +41,30 @@ function mismatchColor(t) {
   return 'rgb(239,83,80)';
 }
 
+function shelterColor(ratio) {
+  // 0=red, 0.15=orange, 0.3=yellow, 0.5+=green
+  const stops = [[0,[239,83,80]],[0.1,[255,152,0]],[0.2,[255,235,59]],[0.35,[76,175,80]]];
+  for (let i = 0; i < stops.length - 1; i++) {
+    if (ratio <= stops[i+1][0]) {
+      const p = (ratio - stops[i][0]) / (stops[i+1][0] - stops[i][0]);
+      const c = stops[i][1].map((v,j) => Math.round(v + (stops[i+1][1][j] - v) * p));
+      return `rgb(${c[0]},${c[1]},${c[2]})`;
+    }
+  }
+  return 'rgb(76,175,80)';
+}
+
 async function loadData() {
-  const [stationsResp, detailsResp, servicesResp] = await Promise.all([
+  const [stationsResp, detailsResp, servicesResp, regionsResp] = await Promise.all([
     fetch('data/stations.json'),
     fetch('data/details.json'),
     fetch('data/services_shelter.json'),
+    fetch('data/regions.geojson'),
   ]);
   DATA = await stationsResp.json();
   Object.assign(DETAILS, await detailsResp.json());
   window.SERVICES = await servicesResp.json();
+  window.REGIONS = await regionsResp.json();
   computeScores(DATA);
   if (typeof window.onDataLoaded === 'function') window.onDataLoaded();
 }

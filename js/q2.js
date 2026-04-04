@@ -360,11 +360,37 @@ function renderQ2Regional() {
     'Healthcare — Shelter Ratio by Planning Area (Top 8)'
   );
 
-  // Store for toggling
+  // Store for toggling + area name mapping
   window._q2RegionalSchoolOpt = schoolOpt;
   window._q2RegionalHealthOpt = healthOpt;
+  window._q2RegionalSchoolAreas = topSchoolAreas;
+  window._q2RegionalHealthAreas = topHealthAreas;
+  window._q2RegionalCurrentType = 'school';
 
   q2RegionalChart.setOption(schoolOpt, true);
+  setupQ2RegionalClick();
+}
+
+function setupQ2RegionalClick() {
+  if (!q2RegionalChart) return;
+  q2RegionalChart.off('click');
+  q2RegionalChart.on('click', params => {
+    // Get category index from click
+    let catIdx = -1;
+    if (params.data && params.data.value) {
+      catIdx = Math.round(params.data.value[0]);
+    } else if (params.dataIndex !== undefined) {
+      catIdx = params.dataIndex;
+    }
+    if (catIdx < 0) return;
+
+    const isSchool = window._q2RegionalCurrentType === 'school';
+    const areas = isSchool ? window._q2RegionalSchoolAreas : window._q2RegionalHealthAreas;
+    const type = isSchool ? 'School' : 'Healthcare';
+    if (catIdx < areas.length) {
+      openQ2Map(areas[catIdx], type);
+    }
+  });
 }
 
 function q2SwitchRegional(type) {
@@ -372,11 +398,13 @@ function q2SwitchRegional(type) {
     t.classList.toggle('active', t.dataset.rtype === type);
   });
   if (!q2RegionalChart) return;
+  window._q2RegionalCurrentType = type;
   if (type === 'school' && window._q2RegionalSchoolOpt) {
     q2RegionalChart.setOption(window._q2RegionalSchoolOpt, true);
   } else if (type === 'health' && window._q2RegionalHealthOpt) {
     q2RegionalChart.setOption(window._q2RegionalHealthOpt, true);
   }
+  setupQ2RegionalClick();
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -498,18 +526,207 @@ function q2Init() {
 }
 
 function q2Show() {
-  // Re-render into the container since it may have been hidden
   if (q2CurrentTab === 'overview') {
-    if (q2Chart) {
-      q2Chart.resize();
-    } else {
-      renderQ2Chart();
-    }
+    if (q2Chart) q2Chart.resize(); else renderQ2Chart();
   } else {
-    if (q2RegionalChart) {
-      q2RegionalChart.resize();
-    } else {
-      renderQ2Regional();
-    }
+    if (q2RegionalChart) q2RegionalChart.resize(); else renderQ2Regional();
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Q2 MAP VIEW — Planning Area detail
+   ═══════════════════════════════════════════════════════════════════ */
+let q2Map = null;
+let q2MapCurrentType = 'School'; // which service type to show
+
+function openQ2Map(areaName, serviceType) {
+  const services = window.SERVICES.filter(s =>
+    s.planning_area.toLowerCase() === areaName.toLowerCase() &&
+    s.type === serviceType
+  );
+  if (!services.length) return;
+
+  q2MapCurrentType = serviceType;
+
+  // Find area boundary
+  const regions = window.REGIONS;
+  const areaFeature = regions.features.find(f =>
+    (f.properties.PLN_AREA_N || '').toLowerCase() === areaName.toLowerCase()
+  );
+
+  // Switch views
+  document.getElementById('q2-chart-view').style.display = 'none';
+  document.getElementById('q2-map-view').style.display = 'flex';
+
+  // Header
+  const displayName = areaName.charAt(0) + areaName.slice(1).toLowerCase();
+  document.getElementById('q2-map-area-name').textContent = displayName;
+  document.getElementById('q2-map-area-sub').textContent =
+    `${services.length} ${serviceType} facilities · Shelter ratio analysis`;
+
+  // Sidebar
+  renderQ2MapSidebar(services, displayName, serviceType);
+
+  // Legend
+  renderQ2MapLegend(services, serviceType);
+
+  // Init map
+  setTimeout(() => initQ2Map(services, areaFeature, serviceType), 50);
+}
+
+function q2BackToChart() {
+  document.getElementById('q2-map-view').style.display = 'none';
+  document.getElementById('q2-chart-view').style.display = 'flex';
+  if (q2Map) { q2Map.remove(); q2Map = null; }
+  if (q2CurrentTab === 'overview') {
+    if (q2Chart) q2Chart.resize(); else renderQ2Chart();
+  } else {
+    if (q2RegionalChart) q2RegionalChart.resize(); else renderQ2Regional();
+  }
+}
+
+function renderQ2MapSidebar(services, areaName, serviceType) {
+  const ratios = services.map(s => s.shelter_ratio * 100);
+  const avg = mean(ratios);
+  const med = median(ratios);
+  const underserved = services.filter(s => s.shelter_ratio < 0.1).length;
+  const sorted = [...services].sort((a, b) => a.shelter_ratio - b.shelter_ratio);
+
+  document.getElementById('q2-map-sidebar-content').innerHTML = `
+    <div class="stats-row">
+      <div class="stat-card"><div class="label">${serviceType}s</div><div class="value" style="color:var(--accent);">${services.length}</div></div>
+      <div class="stat-card"><div class="label">Avg Shelter</div><div class="value" style="color:${avg<15?'var(--orange)':'var(--green)'};">${avg.toFixed(1)}%</div></div>
+      <div class="stat-card"><div class="label">Underserved</div><div class="value" style="color:var(--red);">${underserved}</div><div class="detail">ratio &lt; 10%</div></div>
+    </div>
+
+    <div class="narrative">
+      <div class="section-tag"><div class="dot" style="background:var(--accent);"></div>${areaName} — ${serviceType} Coverage</div>
+      Median shelter ratio is <strong>${med.toFixed(1)}%</strong>.
+      ${underserved > 0 ? `<strong>${underserved}</strong> of ${services.length} facilities have coverage below 10%, indicating significant shelter gaps.` : 'All facilities have at least 10% coverage.'}
+    </div>
+
+    <div class="score-section">
+      <div class="title">All ${serviceType} Facilities (sorted by shelter ratio)</div>
+      ${sorted.map((s, i) => {
+        const color = shelterColor(s.shelter_ratio);
+        return `<div class="metric-row" style="cursor:default;">
+          <span style="color:${color};font-size:14px;margin-right:6px;">●</span>
+          <span class="metric-label" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.name}</span>
+          <span class="metric-value" style="color:${color};">${(s.shelter_ratio * 100).toFixed(1)}%</span>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+function renderQ2MapLegend(services, serviceType) {
+  document.getElementById('q2-map-legend').innerHTML = `
+    <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:700;margin-bottom:8px;">Legend</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+      <span style="font-weight:500;">Shelter Ratio</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+      <span style="color:#ef5350;">Low</span>
+      <div style="width:80px;height:8px;border-radius:4px;background:linear-gradient(to right,#ef5350,#ff9800,#ffeb3b,#4caf50);"></div>
+      <span style="color:#4caf50;">High</span>
+    </div>
+    <div style="height:1px;background:var(--border);margin:8px 0;"></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+      <div style="width:10px;height:10px;border-radius:50%;background:#888;border:2px solid #fff;"></div>
+      ${serviceType} facility
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+      <div style="width:14px;height:14px;border-radius:50%;border:2px dashed var(--accent);box-sizing:border-box;"></div>
+      Planning Area boundary
+    </div>
+  `;
+}
+
+function initQ2Map(services, areaFeature, serviceType) {
+  if (q2Map) { q2Map.remove(); q2Map = null; }
+
+  // Compute center from services
+  const lats = services.map(s => s.lat);
+  const lngs = services.map(s => s.lng);
+  const centerLat = (Math.min(...lats) + Math.max(...lats)) / 2;
+  const centerLng = (Math.min(...lngs) + Math.max(...lngs)) / 2;
+
+  q2Map = new maplibregl.Map({
+    container: 'q2-map',
+    style: { version: 8,
+      sources: {
+        carto: { type: 'raster', tiles: ['https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'], tileSize: 256, attribution: '&copy; CartoDB &copy; OSM' }
+      },
+      layers: [{ id: 'carto', type: 'raster', source: 'carto', paint: { 'raster-opacity': 0.85 } }]
+    },
+    center: [centerLng, centerLat],
+    zoom: 13,
+    maxZoom: 18,
+  });
+
+  function onReady() { try {
+    // Planning area boundary
+    if (areaFeature) {
+      q2Map.addSource('area-boundary', { type: 'geojson', data: areaFeature });
+      q2Map.addLayer({ id: 'area-fill', type: 'fill', source: 'area-boundary',
+        paint: { 'fill-color': '#4fc3f7', 'fill-opacity': 0.05 } });
+      q2Map.addLayer({ id: 'area-line', type: 'line', source: 'area-boundary',
+        paint: { 'line-color': '#4fc3f7', 'line-width': 2, 'line-dasharray': [4, 4], 'line-opacity': 0.6 } });
+    }
+
+    // Service points colored by shelter ratio
+    const geojson = { type: 'FeatureCollection', features: services.map(s => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [s.lng, s.lat] },
+      properties: { name: s.name, shelter_ratio: s.shelter_ratio, color: shelterColor(s.shelter_ratio) }
+    })) };
+
+    q2Map.addSource('services', { type: 'geojson', data: geojson });
+    q2Map.addLayer({ id: 'services-dot', type: 'circle', source: 'services',
+      paint: {
+        'circle-radius': 7,
+        'circle-color': ['get', 'color'],
+        'circle-stroke-width': 2,
+        'circle-stroke-color': '#fff',
+        'circle-opacity': 0.9,
+      }
+    });
+
+    // Labels as HTML markers
+    services.forEach(s => {
+      const el = document.createElement('div');
+      el.style.cssText = 'color:' + shelterColor(s.shelter_ratio) + ';font-size:9px;font-weight:500;text-shadow:0 0 3px #000,0 0 6px #000;pointer-events:none;white-space:nowrap;transform:translateX(-50%);margin-top:6px;';
+      el.textContent = s.name.length > 25 ? s.name.substring(0, 23) + '…' : s.name;
+      new maplibregl.Marker({ element: el, anchor: 'top' }).setLngLat([s.lng, s.lat]).addTo(q2Map);
+    });
+
+    // Hover popup
+    const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false });
+    q2Map.on('mouseenter', 'services-dot', e => {
+      q2Map.getCanvas().style.cursor = 'pointer';
+      const p = e.features[0].properties;
+      popup.setLngLat(e.lngLat)
+        .setHTML(`<div style="font-size:12px;"><b>${p.name}</b><br>Shelter ratio: <b style="color:${p.color};">${(p.shelter_ratio * 100).toFixed(1)}%</b></div>`)
+        .addTo(q2Map);
+    });
+    q2Map.on('mousemove', 'services-dot', e => { popup.setLngLat(e.lngLat); });
+    q2Map.on('mouseleave', 'services-dot', () => { q2Map.getCanvas().style.cursor = ''; popup.remove(); });
+
+    // Fit to area or services
+    if (areaFeature) {
+      const coords = areaFeature.geometry.type === 'MultiPolygon'
+        ? areaFeature.geometry.coordinates.flat(2)
+        : areaFeature.geometry.coordinates.flat(1);
+      const bounds = new maplibregl.LngLatBounds();
+      coords.forEach(c => bounds.extend(c));
+      q2Map.fitBounds(bounds, { padding: 50 });
+    } else {
+      const bounds = new maplibregl.LngLatBounds();
+      services.forEach(s => bounds.extend([s.lng, s.lat]));
+      q2Map.fitBounds(bounds, { padding: 50 });
+    }
+  } catch(err) { console.error('Q2 map error:', err); } }
+
+  if (q2Map.loaded()) onReady();
+  else q2Map.on('load', onReady);
 }
