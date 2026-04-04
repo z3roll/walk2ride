@@ -440,7 +440,13 @@ function initMap(detail, summary) {
         paint: { 'circle-radius': 14, 'circle-color': cfg.color, 'circle-opacity': 0.15 } });
       map.addLayer({ id: 'poi-dot-' + cfg.key, type: 'circle', source: 'poi-' + cfg.key,
         paint: { 'circle-radius': 6, 'circle-color': cfg.color, 'circle-stroke-width': 2, 'circle-stroke-color': '#fff', 'circle-opacity': 0.9 } });
-      // POI names shown via hover popup (no symbol layer needed)
+      // POI labels as HTML markers
+      items.forEach(p => {
+        const el = document.createElement('div');
+        el.style.cssText = 'color:' + cfg.color + ';font-size:9px;font-weight:500;text-shadow:0 0 3px #000,0 0 6px #000;pointer-events:none;white-space:nowrap;transform:translateX(-50%);margin-top:6px;';
+        el.textContent = p.subtype || cfg.label;
+        new maplibregl.Marker({ element: el, anchor: 'top' }).setLngLat([p.lng, p.lat]).addTo(map);
+      });
     });
 
     const poiPopup = new maplibregl.Popup({ closeButton: false, closeOnClick: false });
