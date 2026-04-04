@@ -305,11 +305,12 @@ function renderQ2Regional() {
     .slice(0, 8)
     .map(e => e[0]);
 
-  // Build school colors (all yellow-ish)
+  // Distinct colors per area
+  const AREA_PALETTE = ['#4fc3f7','#ffeb3b','#ef6c00','#ce93d8','#4caf50','#ff7043','#26c6da','#ec407a'];
   const schoolColors = {};
-  topSchoolAreas.forEach(a => { schoolColors[a] = '#ffeb3b'; });
+  topSchoolAreas.forEach((a, i) => { schoolColors[a] = AREA_PALETTE[i % AREA_PALETTE.length]; });
   const healthColors = {};
-  topHealthAreas.forEach(a => { healthColors[a] = '#ef6c00'; });
+  topHealthAreas.forEach((a, i) => { healthColors[a] = AREA_PALETTE[i % AREA_PALETTE.length]; });
 
   if (!q2RegionalChart) q2RegionalChart = echarts.init(document.getElementById('q2-chart'), 'dark');
 
@@ -333,7 +334,7 @@ function renderQ2Regional() {
     (() => {
       const mapped = {};
       topSchoolAreas.forEach(a => {
-        mapped[a.charAt(0) + a.slice(1).toLowerCase()] = '#ffeb3b';
+        mapped[a.charAt(0) + a.slice(1).toLowerCase()] = schoolColors[a];
       });
       return mapped;
     })(),
@@ -352,7 +353,7 @@ function renderQ2Regional() {
     (() => {
       const mapped = {};
       topHealthAreas.forEach(a => {
-        mapped[a.charAt(0) + a.slice(1).toLowerCase()] = '#ef6c00';
+        mapped[a.charAt(0) + a.slice(1).toLowerCase()] = healthColors[a];
       });
       return mapped;
     })(),
