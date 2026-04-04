@@ -21,27 +21,28 @@ function q3TitleCase(s) {
 }
 
 /*
- * Sequential color scale for shelter ratio on dark map background.
- * Actual data range is 0–0.25, so we normalize to that domain.
- * 5-stop scale with strong perceptual steps:
- *   0%  → deep crimson  (178, 24, 43)   — alarm
- *   6%  → burnt coral   (214, 96, 77)   — warning
- *  10%  → warm amber    (244, 165, 96)  — caution
- *  16%  → pale gold     (253, 219, 164) — moderate
- *  24%+ → soft ivory    (254, 245, 224) — adequate
+ * Urgency color scale: composite of vulnerability × shelter deficit.
+ * urgency 0 (low vuln or good shelter) → teal/cool
+ * urgency 1 (high vuln + poor shelter) → bright red/crimson
+ *
+ * 5-stop diverging scale on dark background:
+ *   0.0 → muted teal   (72, 191, 180)  — no concern
+ *   0.25→ pale sage     (170, 210, 160) — low priority
+ *   0.5 → warm amber    (245, 195, 100) — moderate
+ *   0.75→ burnt coral   (230, 110, 65)  — high priority
+ *   1.0 → crimson       (210, 40, 40)   — critical
  */
-const Q3_COLOR_STOPS = [
-  { t: 0.00, r: 178, g: 24,  b: 43  },
-  { t: 0.06, r: 214, g: 96,  b: 77  },
-  { t: 0.10, r: 244, g: 165, b: 96  },
-  { t: 0.16, r: 253, g: 219, b: 164 },
-  { t: 0.24, r: 254, g: 245, b: 224 },
+const Q3_URGENCY_STOPS = [
+  { t: 0.0,  r: 72,  g: 191, b: 180 },
+  { t: 0.25, r: 170, g: 210, b: 160 },
+  { t: 0.5,  r: 245, g: 195, b: 100 },
+  { t: 0.75, r: 230, g: 110, b: 65  },
+  { t: 1.0,  r: 210, g: 40,  b: 40  },
 ];
 
-function q3ShelterSeqColor(ratio) {
-  const v = Math.max(0, Math.min(0.25, ratio));
-  const stops = Q3_COLOR_STOPS;
-  // Find bracket
+function q3UrgencyColor(urgency) {
+  const v = Math.max(0, Math.min(1, urgency));
+  const stops = Q3_URGENCY_STOPS;
   if (v <= stops[0].t) return `rgb(${stops[0].r},${stops[0].g},${stops[0].b})`;
   for (let i = 1; i < stops.length; i++) {
     if (v <= stops[i].t) {
@@ -56,10 +57,27 @@ function q3ShelterSeqColor(ratio) {
   return `rgb(${last.r},${last.g},${last.b})`;
 }
 
-function q3ShelterSeqRGBA(ratio, alpha) {
-  const c = q3ShelterSeqColor(ratio);
+function q3UrgencyRGBA(urgency, alpha) {
+  const c = q3UrgencyColor(urgency);
   const m = c.match(/\d+/g);
   return `rgba(${m[0]},${m[1]},${m[2]},${alpha})`;
+}
+
+/* Compute normalized urgency score for a data point */
+let _q3UrgencyCache = null;
+function q3ComputeUrgencies() {
+  if (_q3UrgencyCache) return _q3UrgencyCache;
+  const vulns = q3Data.map(d => d.vulnerable_ratio);
+  const shelters = q3Data.map(d => d.shelter_ratio);
+  const minV = Math.min(...vulns), maxV = Math.max(...vulns), rangeV = maxV - minV || 1;
+  const minS = Math.min(...shelters), maxS = Math.max(...shelters), rangeS = maxS - minS || 1;
+  _q3UrgencyCache = {};
+  q3Data.forEach(d => {
+    const vn = (d.vulnerable_ratio - minV) / rangeV;
+    const sn = (d.shelter_ratio - minS) / rangeS;
+    _q3UrgencyCache[d.name] = vn * (1 - sn);  // high vuln + low shelter = high urgency
+  });
+  return _q3UrgencyCache;
 }
 
 /* ── Auto-detect case studies ── */
@@ -142,7 +160,6 @@ function initQ3Map() {
 
   q3Map.on('load', () => {
     addQ3Choropleth();
-    addQ3Circles();
     addQ3Legend();
   });
 }
@@ -152,40 +169,36 @@ function addQ3Choropleth() {
   const regions = window.REGIONS;
   if (!regions || !q3Data.length) return;
 
-  // Build lookup: area name → shelter ratio
-  const shelterLookup = {};
-  q3Data.forEach(d => {
-    shelterLookup[d.name.toUpperCase()] = d.shelter_ratio;
-  });
+  // Build lookup
+  const dataLookup = {};
+  q3Data.forEach(d => { dataLookup[d.name.toUpperCase()] = d; });
 
-  // Color each feature
   const coloredFeatures = regions.features.map(f => {
     const areaName = (f.properties.PLN_AREA_N || '').toUpperCase();
-    const ratio = shelterLookup[areaName];
-    const color = ratio !== undefined ? q3ShelterSeqColor(ratio) : 'rgba(40,44,52,0.5)';
-    return {
-      ...f,
-      properties: {
-        ...f.properties,
-        _shelterColor: color,
-        _hasShelterData: ratio !== undefined ? 1 : 0,
-        _shelterRatio: ratio !== undefined ? ratio : -1,
-      },
-    };
+    const hasData = areaName in dataLookup ? 1 : 0;
+    return { ...f, properties: { ...f.properties, _hasData: hasData } };
   });
 
   const geojson = { type: 'FeatureCollection', features: coloredFeatures };
-
   q3Map.addSource('q3-regions', { type: 'geojson', data: geojson });
 
-  // Fill layer
+  // Fill layer colored by urgency
+  const urgencies = q3ComputeUrgencies();
+  const coloredFeatures2 = geojson.features.map(f => {
+    const areaName = (f.properties.PLN_AREA_N || '').toUpperCase();
+    const d = dataLookup[areaName];
+    const color = d ? q3UrgencyColor(urgencies[d.name] || 0) : '#1a1f2a';
+    return { ...f, properties: { ...f.properties, _urgencyColor: color } };
+  });
+  q3Map.getSource('q3-regions').setData({ type: 'FeatureCollection', features: coloredFeatures2 });
+
   q3Map.addLayer({
     id: 'q3-fill',
     type: 'fill',
     source: 'q3-regions',
     paint: {
-      'fill-color': ['get', '_shelterColor'],
-      'fill-opacity': ['case', ['==', ['get', '_hasShelterData'], 1], 0.55, 0.05],
+      'fill-color': ['get', '_urgencyColor'],
+      'fill-opacity': ['case', ['==', ['get', '_hasData'], 1], 0.6, 0.05],
     },
   });
 
@@ -230,35 +243,36 @@ function addQ3Choropleth() {
   });
 }
 
-/* ── Proportional circle markers (sized by vulnerable population count) ── */
+/* ── Proportional circle markers: size=vuln count, color=urgency ── */
 function addQ3Circles() {
   if (!q3Data.length) return;
 
-  // Clear existing markers
   q3Markers.forEach(m => m.remove());
   q3Markers = [];
 
-  // Scale by absolute vulnerable count (elderly + children)
+  const urgencies = q3ComputeUrgencies();
   const vulnCounts = q3Data.map(d => d.elderly_count + d.children_count);
   const maxVuln = Math.max(...vulnCounts);
 
-  q3Data.forEach((d, i) => {
+  q3Data.forEach(d => {
     const vulnCount = d.elderly_count + d.children_count;
-    // Use sqrt scaling so area is proportional to count
     const r = Q3_MIN_CIRCLE_RADIUS + Math.sqrt(vulnCount / (maxVuln || 1)) * (Q3_MAX_CIRCLE_RADIUS - Q3_MIN_CIRCLE_RADIUS);
+    const urgency = urgencies[d.name] || 0;
+    const fillColor = q3UrgencyRGBA(urgency, 0.55);
+    const strokeColor = q3UrgencyRGBA(urgency, 0.9);
 
     const svgSize = Math.ceil(r * 2 + 4);
     const cx = svgSize / 2;
 
     const svg = `<svg width="${svgSize}" height="${svgSize}" xmlns="http://www.w3.org/2000/svg">
       <circle cx="${cx}" cy="${cx}" r="${r}"
-        fill="rgba(206,147,216,0.4)" stroke="rgba(255,255,255,0.8)" stroke-width="1.5"/>
+        fill="${fillColor}" stroke="${strokeColor}" stroke-width="1.5"/>
     </svg>`;
 
     const el = document.createElement('div');
     el.innerHTML = svg;
     el.style.cursor = 'pointer';
-    el.title = `${q3TitleCase(d.name)}\nVulnerable: ${vulnCount.toLocaleString()} (${(d.vulnerable_ratio * 100).toFixed(1)}%)\nElderly: ${d.elderly_count.toLocaleString()}\nChildren: ${d.children_count.toLocaleString()}\nShelter: ${(d.shelter_ratio * 100).toFixed(1)}%`;
+    el.title = `${q3TitleCase(d.name)}\nUrgency: ${(urgency * 100).toFixed(0)}%\nVulnerable: ${vulnCount.toLocaleString()} (${(d.vulnerable_ratio * 100).toFixed(1)}%)\nShelter: ${(d.shelter_ratio * 100).toFixed(1)}%`;
     el.addEventListener('click', (e) => {
       e.stopPropagation();
       q3SelectArea(d);
@@ -279,28 +293,14 @@ function addQ3Legend() {
 
   legendEl.innerHTML = `
     <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:700;margin-bottom:10px;">Legend</div>
-    <div style="margin-bottom:10px;">
-      <div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Polygon Color = Shelter Ratio</div>
-      <div style="display:flex;align-items:center;gap:6px;">
-        <span style="font-size:10px;color:${q3ShelterSeqColor(0)};">0%</span>
-        <div style="flex:1;height:10px;border-radius:5px;background:linear-gradient(to right, ${Q3_COLOR_STOPS.map(s => q3ShelterSeqColor(s.t)).join(', ')});"></div>
-        <span style="font-size:10px;color:${q3ShelterSeqColor(0.24)};">24%</span>
-      </div>
-    </div>
-    <div style="height:1px;background:var(--border);margin:8px 0;"></div>
     <div style="margin-bottom:6px;">
-      <div style="font-size:10px;color:var(--muted);margin-bottom:6px;">Circle Size = Vulnerable Population</div>
-      <div style="display:flex;align-items:center;gap:10px;">
-        <div style="display:flex;align-items:center;gap:4px;">
-          <svg width="14" height="14"><circle cx="7" cy="7" r="5" fill="rgba(206,147,216,0.4)" stroke="rgba(255,255,255,0.8)" stroke-width="1"/></svg>
-          <span style="font-size:10px;">Few</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:4px;">
-          <svg width="28" height="28"><circle cx="14" cy="14" r="12" fill="rgba(206,147,216,0.4)" stroke="rgba(255,255,255,0.8)" stroke-width="1"/></svg>
-          <span style="font-size:10px;">Many</span>
-        </div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Area Color = Improvement Urgency</div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="font-size:10px;color:${q3UrgencyColor(0)};">Low</span>
+        <div style="flex:1;height:10px;border-radius:5px;background:linear-gradient(to right, ${Q3_URGENCY_STOPS.map(s => q3UrgencyColor(s.t)).join(', ')});"></div>
+        <span style="font-size:10px;color:${q3UrgencyColor(1)};">Critical</span>
       </div>
-      <div style="font-size:9px;color:var(--muted);margin-top:4px;">Elderly (65+) + Children (&lt;15)</div>
+      <div style="font-size:9px;color:var(--muted);margin-top:3px;">High Vulnerability × Low Shelter = Red</div>
     </div>
   `;
 }
@@ -354,7 +354,7 @@ function renderQ3Sidebar() {
     </div>
     <div class="stat-card">
       <div class="label">Avg Shelter</div>
-      <div class="value" style="color:${q3ShelterSeqColor(avgShelter / 100)};">${avgShelter.toFixed(1)}%</div>
+      <div class="value" style="color:${q3UrgencyColor(0.6)};">${avgShelter.toFixed(1)}%</div>
     </div>
     <div class="stat-card">
       <div class="label">Avg Vulnerable</div>
@@ -365,7 +365,7 @@ function renderQ3Sidebar() {
   // Overall analysis
   html += `<div class="narrative">
     <div class="section-tag"><span class="dot" style="background:var(--accent);"></span> Overall Analysis</div>
-    <p>This view maps <strong>shelter coverage</strong> (polygon color) against <strong>vulnerable population composition</strong> (ellipse size) for each planning area.</p>
+    <p>Each planning area is colored by <strong>improvement urgency</strong> — combining vulnerable population ratio with shelter deficit. <strong>Red</strong> = high vulnerability × low shelter (needs priority investment). <strong>Teal</strong> = lower urgency.</p>
     <p style="margin-top:8px;">Correlation between vulnerable ratio and shelter ratio: <strong style="color:${correlation >= 0 ? 'var(--green)' : 'var(--red)'};">${correlation >= 0 ? '+' : ''}${correlation.toFixed(3)}</strong>
     ${correlation < -0.1
       ? ' — areas with more vulnerable residents tend to have <strong style="color:var(--red);">worse shelter coverage</strong>, suggesting systemic inequity.'
@@ -413,7 +413,7 @@ function q3RenderCaseCard(label, title, area, color, explanation, archetype) {
       <span style="font-size:10px;color:var(--muted);margin-left:6px;">${archetype}</span>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:8px 0;">
-      <div style="font-size:10px;color:var(--muted);">Shelter<br><strong style="color:${q3ShelterSeqColor(area.shelter_ratio)};font-size:13px;">${(area.shelter_ratio * 100).toFixed(1)}%</strong></div>
+      <div style="font-size:10px;color:var(--muted);">Shelter<br><strong style="color:${q3UrgencyColor(q3ComputeUrgencies()[area.name] || 0)};font-size:13px;">${(area.shelter_ratio * 100).toFixed(1)}%</strong></div>
       <div style="font-size:10px;color:var(--muted);">Elderly<br><strong style="color:var(--text);font-size:13px;">${(area.elderly_ratio * 100).toFixed(1)}%</strong></div>
       <div style="font-size:10px;color:var(--muted);">Children<br><strong style="color:var(--text);font-size:13px;">${(area.children_ratio * 100).toFixed(1)}%</strong></div>
     </div>
@@ -447,7 +447,7 @@ function renderQ3AreaDetail(areaData) {
     <div class="stats-row" style="grid-template-columns:1fr 1fr;">
       <div class="stat-card">
         <div class="label">Shelter Ratio</div>
-        <div class="value" style="color:${q3ShelterSeqColor(d.shelter_ratio)};">${(d.shelter_ratio * 100).toFixed(1)}%</div>
+        <div class="value" style="color:${q3UrgencyColor(q3ComputeUrgencies()[d.name] || 0)};">${(d.shelter_ratio * 100).toFixed(1)}%</div>
         <div class="detail">Rank: #${shelterRank} of ${q3Data.length}</div>
       </div>
       <div class="stat-card">
