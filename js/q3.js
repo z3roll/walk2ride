@@ -33,11 +33,19 @@ function q3ComputeUrgencies() {
   const shelters = q3Data.map(d => d.shelter_ratio);
   const minV = Math.min(...vulns), maxV = Math.max(...vulns), rangeV = maxV - minV || 1;
   const minS = Math.min(...shelters), maxS = Math.max(...shelters), rangeS = maxS - minS || 1;
-  _q3UrgencyCache = {};
+  // Compute raw urgency
+  const raw = {};
   q3Data.forEach(d => {
     const vn = (d.vulnerable_ratio - minV) / rangeV;
     const sn = (d.shelter_ratio - minS) / rangeS;
-    _q3UrgencyCache[d.name] = vn * (1 - sn);  // high vuln + low shelter = high urgency
+    raw[d.name] = vn * (1 - sn);
+  });
+  // Normalize to [0, 1] so the full color range is used
+  const vals = Object.values(raw);
+  const minU = Math.min(...vals), maxU = Math.max(...vals), rangeU = maxU - minU || 1;
+  _q3UrgencyCache = {};
+  q3Data.forEach(d => {
+    _q3UrgencyCache[d.name] = (raw[d.name] - minU) / rangeU;
   });
   return _q3UrgencyCache;
 }
