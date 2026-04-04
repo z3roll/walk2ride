@@ -377,10 +377,12 @@ function setupQ2RegionalClick() {
     let catIdx = -1;
     if (params.data && params.data._catIdx !== undefined) {
       catIdx = params.data._catIdx;
+    } else if (Array.isArray(params.data)) {
+      catIdx = Math.round(params.data[0]);
     } else if (params.data && params.data.value) {
-      catIdx = Math.round(params.data.value[0]);
+      catIdx = Math.round(Array.isArray(params.data.value) ? params.data.value[0] : params.data.value);
     }
-    if (catIdx < 0) return;
+    if (catIdx < 0 || catIdx >= 8) return;
 
     const isSchool = window._q2RegionalCurrentType === 'school';
     const areas = isSchool ? window._q2RegionalSchoolAreas : window._q2RegionalHealthAreas;
