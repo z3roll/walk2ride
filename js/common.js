@@ -55,16 +55,18 @@ function shelterColor(ratio) {
 }
 
 async function loadData() {
-  const [stationsResp, detailsResp, servicesResp, regionsResp] = await Promise.all([
+  const [stationsResp, detailsResp, servicesResp, regionsResp, rq3Resp] = await Promise.all([
     fetch('data/stations.json'),
     fetch('data/details.json'),
     fetch('data/services_shelter.json'),
     fetch('data/regions.geojson'),
+    fetch('data/rq3_planning_areas.json'),
   ]);
   DATA = await stationsResp.json();
   Object.assign(DETAILS, await detailsResp.json());
   window.SERVICES = await servicesResp.json();
   window.REGIONS = await regionsResp.json();
+  window.RQ3_DATA = await rq3Resp.json();
   computeScores(DATA);
   if (typeof window.onDataLoaded === 'function') window.onDataLoaded();
 }
@@ -110,6 +112,7 @@ loadData();
       if (typeof chart !== 'undefined' && chart) chart.resize();
       if (typeof q2Chart !== 'undefined' && q2Chart) q2Chart.resize();
       if (typeof q2RegionalChart !== 'undefined' && q2RegionalChart) q2RegionalChart.resize();
+      if (typeof q3Map !== 'undefined' && q3Map) q3Map.resize();
     });
 
     document.addEventListener('mouseup', () => {
@@ -122,6 +125,7 @@ loadData();
       if (typeof chart !== 'undefined' && chart) chart.resize();
       if (typeof q2Chart !== 'undefined' && q2Chart) q2Chart.resize();
       if (typeof q2RegionalChart !== 'undefined' && q2RegionalChart) q2RegionalChart.resize();
+      if (typeof q3Map !== 'undefined' && q3Map) q3Map.resize();
     });
   });
 })();

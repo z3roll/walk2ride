@@ -15,6 +15,7 @@
 <div id="nav-bar">
   <button class="nav-tab active" data-rq="q1" onclick="switchRQ('q1')">RQ1: Demand-Supply Mismatch</button>
   <button class="nav-tab" data-rq="q2" onclick="switchRQ('q2')">RQ2: Service Connectivity</button>
+  <button class="nav-tab" data-rq="q3" onclick="switchRQ('q3')">RQ3: Vulnerable Populations</button>
 </div>
 
 <!-- ══════════ CONTENT AREA ══════════ -->
@@ -118,16 +119,36 @@
     </div>
   </div>
 
+  <!-- ════════ RQ3 ════════ -->
+  <div id="q3" class="rq-content">
+    <div id="q3-main-view" style="display:flex;flex-direction:row;width:100%;height:100%;">
+      <div id="q3-map-container" style="flex:1;position:relative;">
+        <div id="q3-map" style="width:100%;height:100%;"></div>
+        <div id="q3-map-legend" style="position:absolute;bottom:20px;left:16px;z-index:10;background:rgba(24,27,34,0.92);border:1px solid var(--border);border-radius:10px;padding:14px 18px;font-size:11px;color:var(--text);box-shadow:0 4px 20px rgba(0,0,0,0.5);min-width:200px;"></div>
+      </div>
+      <div class="resize-handle" data-target="q3-sidebar"></div>
+      <div id="q3-sidebar" style="width:380px;min-width:340px;background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;">
+        <div class="sidebar-header">
+          <h1>RQ3: Vulnerable Populations<br>& Shelter Coverage</h1>
+          <div class="sub">Which regions have more vulnerable population while remaining underserved in sheltered coverage?</div>
+        </div>
+        <div class="sidebar-scroll" id="q3-sidebar-content"></div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <!-- ══════════ JS MODULES ══════════ -->
 <script src="js/common.js"></script>
 <script src="js/q1.js"></script>
 <script src="js/q2.js"></script>
+<script src="js/q3.js"></script>
 <script>
 /* ── Navigation ── */
 let activeRQ = 'q1';
 let q2Inited = false;
+let q3Inited = false;
 
 function switchRQ(rq) {
   if (rq === activeRQ) return;
@@ -143,6 +164,9 @@ function switchRQ(rq) {
   } else if (rq === 'q2') {
     if (!q2Inited) { q2Init(); q2Inited = true; }
     else q2Show();
+  } else if (rq === 'q3') {
+    if (!q3Inited) { q3Init(); q3Inited = true; }
+    else q3Show();
   }
 }
 
