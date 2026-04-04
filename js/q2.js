@@ -679,30 +679,91 @@ function q2ToggleZoomService(serviceName) {
       q2Map.addLayer({ id: 'zoom-poly-line', type: 'line', source: 'zoom-poly', paint: { 'line-color': '#fff', 'line-width': 2, 'line-opacity': 0.7 } }, 'services-dot');
     }
 
-    // Draw only infrastructure INSIDE the circle
+    // Draw only infrastructure INSIDE the circle (clipped to boundary)
     const areaData = infra[q2MapAreaName.toUpperCase()] || infra[q2MapAreaName];
     if (areaData) {
       const cosL = Math.cos(circleLat * Math.PI / 180);
-      function isInCircle(c) {
+      function distSq(c) {
         const dx = (c[0] - circleLng) * 111320 * cosL;
         const dy = (c[1] - circleLat) * 111320;
-        return dx*dx + dy*dy <= circleR * circleR;
+        return dx * dx + dy * dy;
       }
-      // Footpaths: plain arrays
-      const nearFp = (areaData.footpaths || []).filter(seg => seg.some(c => isInCircle(c)));
-      // Covered/Bridges: objects with {c, fs, td}
-      const nearCl = (areaData.covered_linkways || []).filter(s => s.c.some(c => isInCircle(c)));
-      const nearBr = (areaData.overhead_bridges || []).filter(s => s.c.some(c => isInCircle(c)));
+      const rSq = circleR * circleR;
+      function isInCircle(c) { return distSq(c) <= rSq; }
 
-      if (nearFp.length) {
-        const fpGeo = { type: 'FeatureCollection', features: nearFp.map(coords => ({
+      // Clip a segment (array of [lng,lat]) to the circle, returning array of sub-segments
+      function clipSegmentToCircle(coords) {
+        const result = [];
+        let current = [];
+        for (let i = 0; i < coords.length - 1; i++) {
+          const a = coords[i], b = coords[i + 1];
+          const aIn = isInCircle(a), bIn = isInCircle(b);
+          if (aIn && bIn) {
+            if (!current.length) current.push(a);
+            current.push(b);
+          } else if (aIn && !bIn) {
+            if (!current.length) current.push(a);
+            current.push(intersectCircle(a, b));
+            if (current.length >= 2) result.push(current);
+            current = [];
+          } else if (!aIn && bIn) {
+            current.push(intersectCircle(a, b));
+            current.push(b);
+          } else {
+            // Both outside -- skip (ignoring through-circle edge case)
+          }
+        }
+        if (current.length >= 2) result.push(current);
+        return result;
+      }
+
+      // Find intersection of line segment a->b with circle boundary
+      function intersectCircle(a, b) {
+        const ax = (a[0] - circleLng) * 111320 * cosL;
+        const ay = (a[1] - circleLat) * 111320;
+        const bx = (b[0] - circleLng) * 111320 * cosL;
+        const by = (b[1] - circleLat) * 111320;
+        const dx = bx - ax, dy = by - ay;
+        const A = dx * dx + dy * dy;
+        const B = 2 * (ax * dx + ay * dy);
+        const C = ax * ax + ay * ay - rSq;
+        const disc = B * B - 4 * A * C;
+        const sqrtDisc = Math.sqrt(Math.max(0, disc));
+        const t1 = (-B - sqrtDisc) / (2 * A);
+        const t2 = (-B + sqrtDisc) / (2 * A);
+        // Pick the t in [0,1] closest to the inside point
+        const t = (t1 >= 0 && t1 <= 1) ? t1 : t2;
+        const tClamped = Math.max(0, Math.min(1, t));
+        return [
+          a[0] + tClamped * (b[0] - a[0]),
+          a[1] + tClamped * (b[1] - a[1])
+        ];
+      }
+
+      // Clip footpaths (plain coordinate arrays)
+      const clippedFp = [];
+      (areaData.footpaths || []).forEach(seg => {
+        clipSegmentToCircle(seg).forEach(s => clippedFp.push(s));
+      });
+      // Clip covered linkways / bridges (objects with {c, fs, td})
+      const clippedCl = [];
+      (areaData.covered_linkways || []).forEach(s => {
+        clipSegmentToCircle(s.c).forEach(c => clippedCl.push({ c, fs: s.fs, td: s.td }));
+      });
+      const clippedBr = [];
+      (areaData.overhead_bridges || []).forEach(s => {
+        clipSegmentToCircle(s.c).forEach(c => clippedBr.push({ c, fs: s.fs, td: s.td }));
+      });
+
+      if (clippedFp.length) {
+        const fpGeo = { type: 'FeatureCollection', features: clippedFp.map(coords => ({
           type: 'Feature', geometry: { type: 'LineString', coordinates: coords }, properties: {}
         })) };
         q2Map.addSource('zoom-fp', { type: 'geojson', data: fpGeo });
         q2Map.addLayer({ id: 'zoom-fp', type: 'line', source: 'zoom-fp', paint: { 'line-color': '#bbb', 'line-width': 3, 'line-opacity': 0.6 } }, 'services-dot');
       }
-      if (nearCl.length) {
-        const clGeo = { type: 'FeatureCollection', features: nearCl.map(s => ({
+      if (clippedCl.length) {
+        const clGeo = { type: 'FeatureCollection', features: clippedCl.map(s => ({
           type: 'Feature', geometry: { type: 'LineString', coordinates: s.c },
           properties: { first_seen: s.fs || 'Unknown' }
         })) };
@@ -717,8 +778,8 @@ function q2ToggleZoomService(serviceName) {
         q2Map.on('mousemove', 'zoom-cl', e => { zClPopup.setLngLat(e.lngLat); });
         q2Map.on('mouseleave', 'zoom-cl', () => { q2Map.getCanvas().style.cursor = ''; zClPopup.remove(); });
       }
-      if (nearBr.length) {
-        const brGeo = { type: 'FeatureCollection', features: nearBr.map(s => ({
+      if (clippedBr.length) {
+        const brGeo = { type: 'FeatureCollection', features: clippedBr.map(s => ({
           type: 'Feature', geometry: { type: 'LineString', coordinates: s.c },
           properties: { first_seen: s.fs || 'Unknown', type_desc: s.td || 'Overhead Bridge' }
         })) };

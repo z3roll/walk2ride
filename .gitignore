@@ -1,0 +1,14 @@
+CLAUDE.md
+dataset/
+dataset.zip
+q1/
+q2/
+q3/
+pre/
+slides/
+build_timeline_map.py
+timeline_map.html
+scripts/output/
+__pycache__/
+*.pyc
+.DS_Store
