@@ -53,104 +53,64 @@ function quantile(arr, q) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   MAIN VIOLIN PLOT (by service type)
+   BOX PLOT + STRIP PLOT (by category)
    ═══════════════════════════════════════════════════════════════════ */
 function buildViolinOption(categories, dataByCategory, colors, title) {
   const series = [];
-  const maxDensityGlobal = [];
 
-  // Precompute KDE for each category
-  const kdeResults = {};
+  // Precompute stats for each category
+  const statsMap = {};
   categories.forEach(cat => {
     const vals = (dataByCategory[cat] || []).map(d => d.shelter_ratio * 100);
-    if (!vals.length) { kdeResults[cat] = { kde: [], vals }; return; }
-    const bw = Math.max(2, std(vals) * 0.6 || 3);
-    const kdePoints = kde(vals, bw, 60);
-    const maxD = Math.max(...kdePoints.map(p => p[1]));
-    maxDensityGlobal.push(maxD);
-    kdeResults[cat] = { kde: kdePoints, vals, maxD };
+    statsMap[cat] = { vals };
   });
 
-  const globalMaxD = Math.max(...maxDensityGlobal, 0.001);
-  const violinMaxPx = 45; // max half-width in pixels
-
-  // Custom violin series — one per category for correct pixel mapping
+  // Box plot elements: whiskers, IQR box, median, mean
   categories.forEach((cat, catIdx) => {
-    const info = kdeResults[cat];
-    if (!info || !info.kde.length) return;
-
-    series.push({
-      type: 'custom',
-      renderItem: function(params, api) {
-        // Get the center x pixel for this category
-        const centerPx = api.coord([catIdx, 0]);
-        const cx = centerPx[0];
-
-        const normalizer = globalMaxD;
-        const points = [];
-        // Right side
-        for (let i = 0; i < info.kde.length; i++) {
-          const [y, d] = info.kde[i];
-          const widthPx = (d / normalizer) * violinMaxPx;
-          const yPx = api.coord([0, y])[1];
-          points.push([cx + widthPx, yPx]);
-        }
-        // Left side (mirror)
-        for (let i = info.kde.length - 1; i >= 0; i--) {
-          const [y, d] = info.kde[i];
-          const widthPx = (d / normalizer) * violinMaxPx;
-          const yPx = api.coord([0, y])[1];
-          points.push([cx - widthPx, yPx]);
-        }
-
-        return {
-          type: 'polygon',
-          shape: { points },
-          style: {
-            fill: colors[cat] || '#888',
-            opacity: 0.3,
-            stroke: colors[cat] || '#888',
-            lineWidth: 1.5,
-          },
-        };
-      },
-      data: [[catIdx, 0]],
-      z: 1,
-    });
-  });
-
-  // Boxplot-like elements (median line, Q1-Q3 box)
-  categories.forEach((cat, catIdx) => {
-    const vals = kdeResults[cat].vals;
+    const vals = statsMap[cat].vals;
     if (!vals.length) return;
     const q1 = quantile(vals, 0.25);
     const q3 = quantile(vals, 0.75);
+    const iqr = q3 - q1;
     const med = median(vals);
     const m = mean(vals);
     const color = colors[cat] || '#888';
+    const whiskerLo = Math.max(Math.min(...vals), q1 - 1.5 * iqr);
+    const whiskerHi = Math.min(Math.max(...vals), q3 + 1.5 * iqr);
 
-    // IQR box
+    // Whisker lines (vertical)
     series.push({
       type: 'custom',
       renderItem: function(params, api) {
-        const center = api.coord([catIdx, q1]);
-        const topPx = api.coord([catIdx, q3]);
-        const leftPx = [center[0] - 12, center[1]];
-        const rightPx = [center[0] + 12, topPx[1]];
+        const lo = api.coord([catIdx, whiskerLo]);
+        const hi = api.coord([catIdx, whiskerHi]);
+        return {
+          type: 'group',
+          children: [
+            // Vertical whisker line
+            { type: 'line', shape: { x1: lo[0], y1: lo[1], x2: hi[0], y2: hi[1] }, style: { stroke: color, lineWidth: 1.5, opacity: 0.5 } },
+            // Bottom cap
+            { type: 'line', shape: { x1: lo[0] - 10, y1: lo[1], x2: lo[0] + 10, y2: lo[1] }, style: { stroke: color, lineWidth: 1.5, opacity: 0.5 } },
+            // Top cap
+            { type: 'line', shape: { x1: hi[0] - 10, y1: hi[1], x2: hi[0] + 10, y2: hi[1] }, style: { stroke: color, lineWidth: 1.5, opacity: 0.5 } },
+          ],
+        };
+      },
+      data: [[catIdx]],
+      z: 1,
+    });
+
+    // IQR box (filled)
+    series.push({
+      type: 'custom',
+      renderItem: function(params, api) {
+        const bottom = api.coord([catIdx, q1]);
+        const top = api.coord([catIdx, q3]);
+        const halfW = 18;
         return {
           type: 'rect',
-          shape: {
-            x: leftPx[0],
-            y: rightPx[1],
-            width: rightPx[0] - leftPx[0],
-            height: leftPx[1] - rightPx[1],
-          },
-          style: {
-            fill: 'transparent',
-            stroke: color,
-            lineWidth: 2,
-            opacity: 0.7,
-          },
+          shape: { x: bottom[0] - halfW, y: top[1], width: halfW * 2, height: bottom[1] - top[1] },
+          style: { fill: color, opacity: 0.15, stroke: color, lineWidth: 2 },
         };
       },
       data: [[catIdx]],
@@ -162,11 +122,9 @@ function buildViolinOption(categories, dataByCategory, colors, title) {
       type: 'custom',
       renderItem: function(params, api) {
         const center = api.coord([catIdx, med]);
-        const left = [center[0] - 16, center[1]];
-        const right = [center[0] + 16, center[1]];
         return {
           type: 'line',
-          shape: { x1: left[0], y1: left[1], x2: right[0], y2: right[1] },
+          shape: { x1: center[0] - 18, y1: center[1], x2: center[0] + 18, y2: center[1] },
           style: { stroke: '#fff', lineWidth: 2.5 },
         };
       },
@@ -174,7 +132,7 @@ function buildViolinOption(categories, dataByCategory, colors, title) {
       z: 4,
     });
 
-    // Mean marker
+    // Mean diamond marker
     series.push({
       type: 'scatter',
       data: [{ value: [catIdx, m], _catIdx: catIdx }],
@@ -185,23 +143,23 @@ function buildViolinOption(categories, dataByCategory, colors, title) {
     });
   });
 
-  // Jittered scatter points
+  // Strip plot: jittered scatter points (more visible than before)
   categories.forEach((cat, catIdx) => {
-    const vals = kdeResults[cat].vals;
+    const vals = statsMap[cat].vals;
     if (!vals.length) return;
     const color = colors[cat] || '#888';
     const scatterData = vals.map(v => {
-      const jitter = (Math.random() - 0.5) * 0.28;
+      const jitter = (Math.random() - 0.5) * 0.5;
       return {
         value: [catIdx + jitter, v],
         _catIdx: catIdx,
-        itemStyle: { color: color, opacity: 0.35 },
+        itemStyle: { color: color, opacity: 0.4 },
       };
     });
     series.push({
       type: 'scatter',
       data: scatterData,
-      symbolSize: 3,
+      symbolSize: 3.5,
       z: 2,
     });
   });
