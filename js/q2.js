@@ -590,7 +590,7 @@ function renderQ2MapSidebar(services, areaName, serviceType) {
   const avg = mean(ratios);
   const med = median(ratios);
   const underserved = services.filter(s => s.shelter_ratio < 0.1).length;
-  const sorted = [...services].sort((a, b) => a.shelter_ratio - b.shelter_ratio);
+  const sorted = [...services].sort((a, b) => b.shelter_ratio - a.shelter_ratio);
 
   document.getElementById('q2-map-sidebar-content').innerHTML = `
     <div class="stats-row">
