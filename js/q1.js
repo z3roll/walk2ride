@@ -436,8 +436,6 @@ function initMap(detail, summary) {
         properties: { name: p.name, poiType: cfg.label, subtype: p.subtype || '' }
       })) };
       map.addSource('poi-' + cfg.key, { type: 'geojson', data: geojson });
-      map.addLayer({ id: 'poi-glow-' + cfg.key, type: 'circle', source: 'poi-' + cfg.key,
-        paint: { 'circle-radius': 14, 'circle-color': cfg.color, 'circle-opacity': 0.15 } });
       map.addLayer({ id: 'poi-dot-' + cfg.key, type: 'circle', source: 'poi-' + cfg.key,
         paint: { 'circle-radius': 6, 'circle-color': cfg.color, 'circle-stroke-width': 2, 'circle-stroke-color': '#fff', 'circle-opacity': 0.9 } });
       // POI labels as HTML markers
