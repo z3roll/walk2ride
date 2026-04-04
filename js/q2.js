@@ -177,12 +177,11 @@ function buildViolinOption(categories, dataByCategory, colors, title) {
     // Mean marker
     series.push({
       type: 'scatter',
-      data: [[catIdx, m]],
+      data: [{ value: [catIdx, m], _catIdx: catIdx }],
       symbol: 'diamond',
       symbolSize: 10,
       itemStyle: { color: '#fff', borderColor: color, borderWidth: 2 },
       z: 5,
-      silent: true,
     });
   });
 
@@ -195,6 +194,7 @@ function buildViolinOption(categories, dataByCategory, colors, title) {
       const jitter = (Math.random() - 0.5) * 0.28;
       return {
         value: [catIdx + jitter, v],
+        _catIdx: catIdx,
         itemStyle: { color: color, opacity: 0.35 },
       };
     });
@@ -203,7 +203,6 @@ function buildViolinOption(categories, dataByCategory, colors, title) {
       data: scatterData,
       symbolSize: 3,
       z: 2,
-      silent: true,
     });
   });
 
@@ -375,12 +374,11 @@ function setupQ2RegionalClick() {
   if (!q2RegionalChart) return;
   q2RegionalChart.off('click');
   q2RegionalChart.on('click', params => {
-    // Get category index from click
     let catIdx = -1;
-    if (params.data && params.data.value) {
+    if (params.data && params.data._catIdx !== undefined) {
+      catIdx = params.data._catIdx;
+    } else if (params.data && params.data.value) {
       catIdx = Math.round(params.data.value[0]);
-    } else if (params.dataIndex !== undefined) {
-      catIdx = params.dataIndex;
     }
     if (catIdx < 0) return;
 
