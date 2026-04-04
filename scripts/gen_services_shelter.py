@@ -102,20 +102,32 @@ def _geom_length(gdf: gpd.GeoDataFrame) -> float:
     return total
 
 
+def _extract_coords(geom: Any) -> list:
+    """Recursively extract all coordinates from any geometry type."""
+    if geom.is_empty:
+        return []
+    if geom.geom_type == "Point":
+        return [geom.coords[0]]
+    if geom.geom_type == "MultiPoint":
+        return [p.coords[0] for p in geom.geoms]
+    if geom.geom_type == "Polygon":
+        return list(geom.exterior.coords)
+    if geom.geom_type in ("MultiPolygon", "GeometryCollection", "MultiLineString"):
+        coords: list = []
+        for sub in geom.geoms:
+            coords.extend(_extract_coords(sub))
+        return coords
+    if geom.geom_type == "LineString":
+        return list(geom.coords)
+    return []
+
+
 def _enclosing_radius(geom: Any) -> float:
     """Return the radius of the minimum enclosing circle for a geometry."""
     centroid = geom.centroid
     if geom.geom_type == "Point":
         return 0.0
-    # Use the maximum distance from centroid to any vertex as an approximation
-    if geom.geom_type == "MultiPolygon":
-        coords = []
-        for p in geom.geoms:
-            coords.extend(p.exterior.coords)
-    elif geom.geom_type == "Polygon":
-        coords = list(geom.exterior.coords)
-    else:
-        coords = list(geom.coords) if hasattr(geom, "coords") else []
+    coords = _extract_coords(geom)
     if not coords:
         return 0.0
     cx, cy = centroid.x, centroid.y
@@ -243,6 +255,47 @@ def load_hdb() -> gpd.GeoDataFrame:
     return gdf[["name", "service_type", "geometry"]]
 
 
+# ── deduplication: merge nearby POIs of same type ────────────────────────
+MERGE_DISTANCE = 50  # metres
+
+def dedup_nearby(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    """Merge features within MERGE_DISTANCE of each other.
+
+    For each cluster, keep the name of the feature with the longest name
+    (most descriptive) and union the geometries.
+    """
+    centroids = gdf.geometry.centroid
+    tree = STRtree(centroids.values)
+    used: set[int] = set()
+    rows: list[dict] = []
+
+    for i in range(len(gdf)):
+        if i in used:
+            continue
+        pt = centroids.iloc[i]
+        candidates = tree.query(pt.buffer(MERGE_DISTANCE))
+        cluster = [i]
+        for j in candidates:
+            if j != i and j not in used:
+                if centroids.iloc[j].distance(pt) <= MERGE_DISTANCE:
+                    cluster.append(j)
+        for j in cluster:
+            used.add(j)
+        # Pick the name with longest length (most descriptive)
+        best = max(cluster, key=lambda idx: len(gdf.iloc[idx]["name"]))
+        geom = unary_union([gdf.geometry.iloc[j] for j in cluster])
+        rows.append({
+            "name": gdf.iloc[best]["name"],
+            "service_type": gdf.iloc[best]["service_type"],
+            "geometry": geom,
+        })
+
+    result = gpd.GeoDataFrame(rows, crs=gdf.crs)
+    if len(result) < len(gdf):
+        log.info("    Dedup: %d → %d (merged %d)", len(gdf), len(result), len(gdf) - len(result))
+    return result
+
+
 # ── planning area assignment ─────────────────────────────────────────────
 def assign_planning_area(
     services: gpd.GeoDataFrame,
@@ -288,10 +341,10 @@ def main() -> None:
     br_sindex = STRtree(br_geoms)
 
     log.info("\n=== Loading service POIs ===")
-    schools = load_schools()
-    healthcare = load_healthcare()
-    commercial = load_commercial()
-    hdb = load_hdb()
+    schools = dedup_nearby(load_schools())
+    healthcare = dedup_nearby(load_healthcare())
+    commercial = dedup_nearby(load_commercial())
+    hdb = load_hdb()  # HDB blocks are already distinct buildings
 
     services = pd.concat([schools, healthcare, commercial, hdb], ignore_index=True)
     services = gpd.GeoDataFrame(services, crs=CRS_SVY)
