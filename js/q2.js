@@ -603,6 +603,7 @@ function q2ToggleZoomService(serviceName) {
     });
     // Restore all layer opacities
     q2Map.setPaintProperty('services-dot', 'circle-opacity', 0.9);
+    q2Map.setPaintProperty('services-dot', 'circle-stroke-opacity', 1);
     if (q2Map.getLayer('area-fp')) q2Map.setPaintProperty('area-fp', 'line-opacity', 0.3);
     if (q2Map.getLayer('area-cl')) q2Map.setPaintProperty('area-cl', 'line-opacity', 0.5);
     if (q2Map.getLayer('area-br')) q2Map.setPaintProperty('area-br', 'line-opacity', 0.5);
@@ -625,7 +626,8 @@ function q2ToggleZoomService(serviceName) {
     });
 
     // Dim everything
-    q2Map.setPaintProperty('services-dot', 'circle-opacity', 0.15);
+    q2Map.setPaintProperty('services-dot', 'circle-opacity', 0);
+    q2Map.setPaintProperty('services-dot', 'circle-stroke-opacity', 0);
     if (q2Map.getLayer('area-fp')) q2Map.setPaintProperty('area-fp', 'line-opacity', 0.08);
     if (q2Map.getLayer('area-cl')) q2Map.setPaintProperty('area-cl', 'line-opacity', 0.1);
     if (q2Map.getLayer('area-br')) q2Map.setPaintProperty('area-br', 'line-opacity', 0.1);
