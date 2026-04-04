@@ -69,6 +69,14 @@ async function loadData() {
   if (typeof window.onDataLoaded === 'function') window.onDataLoaded();
 }
 
+window.AREA_INFRA = null;
+async function loadAreaInfra() {
+  if (window.AREA_INFRA) return window.AREA_INFRA;
+  const resp = await fetch('data/area_infra.json');
+  window.AREA_INFRA = await resp.json();
+  return window.AREA_INFRA;
+}
+
 loadData();
 
 /* ═══════════════════════════════════════════════════════════════════

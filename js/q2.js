@@ -537,9 +537,14 @@ function q2Show() {
    Q2 MAP VIEW — Planning Area detail
    ═══════════════════════════════════════════════════════════════════ */
 let q2Map = null;
-let q2MapCurrentType = 'School'; // which service type to show
+let q2MapCurrentType = 'School';
+let q2MapAreaName = '';
+let q2MapServices = [];
+let q2MapAreaFeature = null;
+let q2MapAreaBounds = null;
+let q2ZoomedService = null; // currently zoomed service name, null = overview
 
-function openQ2Map(areaName, serviceType) {
+async function openQ2Map(areaName, serviceType) {
   const services = window.SERVICES.filter(s =>
     s.planning_area.toLowerCase() === areaName.toLowerCase() &&
     s.type === serviceType
@@ -547,41 +552,147 @@ function openQ2Map(areaName, serviceType) {
   if (!services.length) return;
 
   q2MapCurrentType = serviceType;
+  q2MapAreaName = areaName;
+  q2MapServices = services;
+  q2ZoomedService = null;
 
-  // Find area boundary
   const regions = window.REGIONS;
-  const areaFeature = regions.features.find(f =>
+  q2MapAreaFeature = regions.features.find(f =>
     (f.properties.PLN_AREA_N || '').toLowerCase() === areaName.toLowerCase()
   );
 
-  // Switch views
+  // Load area infrastructure
+  await loadAreaInfra();
+
   document.getElementById('q2-chart-view').style.display = 'none';
   document.getElementById('q2-map-view').style.display = 'flex';
 
-  // Header
   const displayName = areaName.charAt(0) + areaName.slice(1).toLowerCase();
   document.getElementById('q2-map-area-name').textContent = displayName;
   document.getElementById('q2-map-area-sub').textContent =
     `${services.length} ${serviceType} facilities · Shelter ratio analysis`;
 
-  // Sidebar
   renderQ2MapSidebar(services, displayName, serviceType);
-
-  // Legend
-  renderQ2MapLegend(services, serviceType);
-
-  // Init map
-  setTimeout(() => initQ2Map(services, areaFeature, serviceType), 50);
+  renderQ2MapLegend(serviceType, false);
+  setTimeout(() => initQ2Map(services, q2MapAreaFeature, areaName), 50);
 }
 
 function q2BackToChart() {
   document.getElementById('q2-map-view').style.display = 'none';
   document.getElementById('q2-chart-view').style.display = 'flex';
   if (q2Map) { q2Map.remove(); q2Map = null; }
+  q2ZoomedService = null;
   if (q2CurrentTab === 'overview') {
     if (q2Chart) q2Chart.resize(); else renderQ2Chart();
   } else {
     if (q2RegionalChart) q2RegionalChart.resize(); else renderQ2Regional();
+  }
+}
+
+function q2ToggleZoomService(serviceName) {
+  if (q2ZoomedService === serviceName) {
+    // Zoom back out to area
+    q2ZoomedService = null;
+    if (q2MapAreaBounds) q2Map.fitBounds(q2MapAreaBounds, { padding: 50 });
+    // Remove zoom layers
+    ['zoom-ring','zoom-poly','zoom-fp','zoom-cl','zoom-br'].forEach(id => {
+      [id, id+'-line', id+'-fill'].forEach(lid => {
+        if (q2Map.getLayer(lid)) q2Map.removeLayer(lid);
+      });
+      if (q2Map.getSource(id)) q2Map.removeSource(id);
+    });
+    // Restore service dots opacity
+    q2Map.setPaintProperty('services-dot', 'circle-opacity', 0.9);
+    renderQ2MapLegend(q2MapCurrentType, false);
+    // Update sidebar highlight
+    document.querySelectorAll('.q2-svc-row').forEach(el => el.style.background = '');
+  } else {
+    // Zoom to this service
+    q2ZoomedService = serviceName;
+    const svc = q2MapServices.find(s => s.name === serviceName);
+    if (!svc) return;
+
+    // Remove previous zoom layers
+    ['zoom-ring','zoom-poly','zoom-fp','zoom-cl','zoom-br'].forEach(id => {
+      [id, id+'-line', id+'-fill'].forEach(lid => {
+        if (q2Map.getLayer(lid)) q2Map.removeLayer(lid);
+      });
+      if (q2Map.getSource(id)) q2Map.removeSource(id);
+    });
+
+    // Dim other dots
+    q2Map.setPaintProperty('services-dot', 'circle-opacity', 0.3);
+
+    // 100m ring around service
+    const R = 100;
+    const lat = svc.lat, lng = svc.lng;
+    const ringCoords = [];
+    for (let i = 0; i <= 64; i++) {
+      const a = (i / 64) * Math.PI * 2;
+      ringCoords.push([
+        lng + (R / (111320 * Math.cos(lat * Math.PI / 180))) * Math.sin(a),
+        lat + (R / 111320) * Math.cos(a)
+      ]);
+    }
+    q2Map.addSource('zoom-ring', { type: 'geojson', data: { type: 'Feature', geometry: { type: 'Polygon', coordinates: [ringCoords] } } });
+    q2Map.addLayer({ id: 'zoom-ring-fill', type: 'fill', source: 'zoom-ring', paint: { 'fill-color': shelterColor(svc.shelter_ratio), 'fill-opacity': 0.06 } }, 'services-dot');
+    q2Map.addLayer({ id: 'zoom-ring-line', type: 'line', source: 'zoom-ring', paint: { 'line-color': shelterColor(svc.shelter_ratio), 'line-width': 2, 'line-dasharray': [4, 4], 'line-opacity': 0.6 } }, 'services-dot');
+
+    // Service polygon if available
+    const infra = window.AREA_INFRA;
+    const polyKey = q2MapCurrentType === 'School' ? '_school_polygons' : '_health_polygons';
+    const allPolys = infra[polyKey] || {};
+    // Find matching polygon by name + approximate coords
+    const polyMatch = Object.entries(allPolys).find(([k, v]) => k.startsWith(serviceName + '_'));
+    if (polyMatch) {
+      q2Map.addSource('zoom-poly', { type: 'geojson', data: { type: 'Feature', geometry: { type: 'Polygon', coordinates: [polyMatch[1]] } } });
+      q2Map.addLayer({ id: 'zoom-poly-fill', type: 'fill', source: 'zoom-poly', paint: { 'fill-color': '#fff', 'fill-opacity': 0.1 } }, 'services-dot');
+      q2Map.addLayer({ id: 'zoom-poly-line', type: 'line', source: 'zoom-poly', paint: { 'line-color': '#fff', 'line-width': 2, 'line-opacity': 0.7 } }, 'services-dot');
+    }
+
+    // Draw footpath/covered/bridge near this service from area infra data
+    const areaData = infra[q2MapAreaName.toUpperCase()] || infra[q2MapAreaName];
+    if (areaData) {
+      function filterNear(segs, lat, lng, radius) {
+        const dLat = radius / 111320;
+        const dLng = radius / (111320 * Math.cos(lat * Math.PI / 180));
+        return segs.filter(seg => seg.some(c => Math.abs(c[1] - lat) < dLat && Math.abs(c[0] - lng) < dLng));
+      }
+      const nearFp = filterNear(areaData.footpaths || [], lat, lng, 150);
+      const nearCl = filterNear(areaData.covered_linkways || [], lat, lng, 150);
+      const nearBr = filterNear(areaData.overhead_bridges || [], lat, lng, 150);
+
+      function segsToGeoJSON(segs) {
+        return { type: 'FeatureCollection', features: segs.map(coords => ({
+          type: 'Feature', geometry: { type: 'LineString', coordinates: coords }, properties: {}
+        })) };
+      }
+
+      if (nearFp.length) {
+        q2Map.addSource('zoom-fp', { type: 'geojson', data: segsToGeoJSON(nearFp) });
+        q2Map.addLayer({ id: 'zoom-fp', type: 'line', source: 'zoom-fp', paint: { 'line-color': '#bbb', 'line-width': 2, 'line-opacity': 0.5 } }, 'services-dot');
+      }
+      if (nearCl.length) {
+        q2Map.addSource('zoom-cl', { type: 'geojson', data: segsToGeoJSON(nearCl) });
+        q2Map.addLayer({ id: 'zoom-cl', type: 'line', source: 'zoom-cl', paint: { 'line-color': '#4caf50', 'line-width': 4, 'line-opacity': 0.85 } }, 'services-dot');
+      }
+      if (nearBr.length) {
+        q2Map.addSource('zoom-br', { type: 'geojson', data: segsToGeoJSON(nearBr) });
+        q2Map.addLayer({ id: 'zoom-br', type: 'line', source: 'zoom-br', paint: { 'line-color': '#ff9800', 'line-width': 4, 'line-opacity': 0.85 } }, 'services-dot');
+      }
+    }
+
+    // Zoom to ring area
+    const bounds = new maplibregl.LngLatBounds();
+    ringCoords.forEach(c => bounds.extend(c));
+    q2Map.fitBounds(bounds, { padding: 60 });
+
+    renderQ2MapLegend(q2MapCurrentType, true);
+
+    // Highlight sidebar row
+    document.querySelectorAll('.q2-svc-row').forEach(el => {
+      el.style.background = el.dataset.name === serviceName ? 'var(--card)' : '';
+    });
   }
 }
 
@@ -602,14 +713,16 @@ function renderQ2MapSidebar(services, areaName, serviceType) {
     <div class="narrative">
       <div class="section-tag"><div class="dot" style="background:var(--accent);"></div>${areaName} — ${serviceType} Coverage</div>
       Median shelter ratio is <strong>${med.toFixed(1)}%</strong>.
-      ${underserved > 0 ? `<strong>${underserved}</strong> of ${services.length} facilities have coverage below 10%, indicating significant shelter gaps.` : 'All facilities have at least 10% coverage.'}
+      ${underserved > 0 ? `<strong>${underserved}</strong> of ${services.length} facilities have coverage below 10%.` : 'All facilities have at least 10% coverage.'}
+      <br><span style="color:var(--muted);font-size:10px;">Click a facility below to zoom in and see surrounding shelter infrastructure.</span>
     </div>
 
     <div class="score-section">
-      <div class="title">All ${serviceType} Facilities (sorted by shelter ratio)</div>
-      ${sorted.map((s, i) => {
+      <div class="title">All ${serviceType} Facilities (click to zoom)</div>
+      ${sorted.map(s => {
         const color = shelterColor(s.shelter_ratio);
-        return `<div class="metric-row" style="cursor:default;">
+        const esc = s.name.replace(/'/g, "\\'");
+        return `<div class="metric-row q2-svc-row" data-name="${s.name}" style="cursor:pointer;" onclick="q2ToggleZoomService('${esc}')">
           <span style="color:${color};font-size:14px;margin-right:6px;">●</span>
           <span class="metric-label" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.name}</span>
           <span class="metric-value" style="color:${color};">${(s.shelter_ratio * 100).toFixed(1)}%</span>
@@ -619,85 +732,94 @@ function renderQ2MapSidebar(services, areaName, serviceType) {
   `;
 }
 
-function renderQ2MapLegend(services, serviceType) {
+function renderQ2MapLegend(serviceType, isZoomed) {
   document.getElementById('q2-map-legend').innerHTML = `
     <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:700;margin-bottom:8px;">Legend</div>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
-      <span style="font-weight:500;">Shelter Ratio</span>
-    </div>
-    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
       <span style="color:#ef5350;">Low</span>
-      <div style="width:80px;height:8px;border-radius:4px;background:linear-gradient(to right,#ef5350,#ff9800,#ffeb3b,#4caf50);"></div>
+      <div style="width:60px;height:6px;border-radius:3px;background:linear-gradient(to right,#ef5350,#ff9800,#ffeb3b,#4caf50);"></div>
       <span style="color:#4caf50;">High</span>
+      <span style="color:var(--muted);font-size:9px;margin-left:4px;">Shelter</span>
     </div>
-    <div style="height:1px;background:var(--border);margin:8px 0;"></div>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
       <div style="width:10px;height:10px;border-radius:50%;background:#888;border:2px solid #fff;"></div>
-      ${serviceType} facility
+      <span>${serviceType} facility</span>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
       <div style="width:14px;height:14px;border-radius:50%;border:2px dashed var(--accent);box-sizing:border-box;"></div>
-      Planning Area boundary
+      <span>Planning Area</span>
     </div>
+    ${isZoomed ? `<div style="height:1px;background:var(--border);margin:6px 0;"></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+      <div style="width:18px;height:2px;background:#bbb;border-radius:1px;"></div> <span>Footpath</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+      <div style="width:18px;height:3px;background:#4caf50;border-radius:2px;"></div> <span>Covered Linkway</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+      <div style="width:18px;height:3px;background:#ff9800;border-radius:2px;"></div> <span>Overhead Bridge</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+      <div style="width:14px;height:14px;border:2px solid #fff;border-radius:3px;box-sizing:border-box;"></div> <span>Building</span>
+    </div>` : ''}
   `;
 }
 
-function initQ2Map(services, areaFeature, serviceType) {
+function initQ2Map(services, areaFeature, areaName) {
   if (q2Map) { q2Map.remove(); q2Map = null; }
 
-  // Compute center from services
-  const lats = services.map(s => s.lat);
-  const lngs = services.map(s => s.lng);
+  const lats = services.map(s => s.lat), lngs = services.map(s => s.lng);
   const centerLat = (Math.min(...lats) + Math.max(...lats)) / 2;
   const centerLng = (Math.min(...lngs) + Math.max(...lngs)) / 2;
 
   q2Map = new maplibregl.Map({
     container: 'q2-map',
     style: { version: 8,
-      sources: {
-        carto: { type: 'raster', tiles: ['https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'], tileSize: 256, attribution: '&copy; CartoDB &copy; OSM' }
-      },
+      sources: { carto: { type: 'raster', tiles: ['https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'], tileSize: 256, attribution: '&copy; CartoDB &copy; OSM' } },
       layers: [{ id: 'carto', type: 'raster', source: 'carto', paint: { 'raster-opacity': 0.85 } }]
     },
-    center: [centerLng, centerLat],
-    zoom: 13,
-    maxZoom: 18,
+    center: [centerLng, centerLat], zoom: 13, maxZoom: 18,
   });
 
   function onReady() { try {
-    // Planning area boundary
+    // Area boundary
     if (areaFeature) {
       q2Map.addSource('area-boundary', { type: 'geojson', data: areaFeature });
-      q2Map.addLayer({ id: 'area-fill', type: 'fill', source: 'area-boundary',
-        paint: { 'fill-color': '#4fc3f7', 'fill-opacity': 0.05 } });
-      q2Map.addLayer({ id: 'area-line', type: 'line', source: 'area-boundary',
-        paint: { 'line-color': '#4fc3f7', 'line-width': 2, 'line-dasharray': [4, 4], 'line-opacity': 0.6 } });
+      q2Map.addLayer({ id: 'area-fill', type: 'fill', source: 'area-boundary', paint: { 'fill-color': '#4fc3f7', 'fill-opacity': 0.05 } });
+      q2Map.addLayer({ id: 'area-line', type: 'line', source: 'area-boundary', paint: { 'line-color': '#4fc3f7', 'line-width': 2, 'line-dasharray': [4, 4], 'line-opacity': 0.6 } });
     }
 
-    // Service points colored by shelter ratio
+    // Area infrastructure (footpath + covered linkway + bridge)
+    const infra = window.AREA_INFRA;
+    const areaData = infra ? (infra[areaName.toUpperCase()] || infra[areaName]) : null;
+    if (areaData) {
+      function segsToGeoJSON(segs) {
+        return { type: 'FeatureCollection', features: segs.map(coords => ({
+          type: 'Feature', geometry: { type: 'LineString', coordinates: coords }, properties: {}
+        })) };
+      }
+      if (areaData.footpaths && areaData.footpaths.length) {
+        q2Map.addSource('area-fp', { type: 'geojson', data: segsToGeoJSON(areaData.footpaths) });
+        q2Map.addLayer({ id: 'area-fp', type: 'line', source: 'area-fp', paint: { 'line-color': '#bbb', 'line-width': 1.5, 'line-opacity': 0.3 } });
+      }
+      if (areaData.covered_linkways && areaData.covered_linkways.length) {
+        q2Map.addSource('area-cl', { type: 'geojson', data: segsToGeoJSON(areaData.covered_linkways) });
+        q2Map.addLayer({ id: 'area-cl', type: 'line', source: 'area-cl', paint: { 'line-color': '#4caf50', 'line-width': 2.5, 'line-opacity': 0.5 } });
+      }
+      if (areaData.overhead_bridges && areaData.overhead_bridges.length) {
+        q2Map.addSource('area-br', { type: 'geojson', data: segsToGeoJSON(areaData.overhead_bridges) });
+        q2Map.addLayer({ id: 'area-br', type: 'line', source: 'area-br', paint: { 'line-color': '#ff9800', 'line-width': 2.5, 'line-opacity': 0.5 } });
+      }
+    }
+
+    // Service dots
     const geojson = { type: 'FeatureCollection', features: services.map(s => ({
-      type: 'Feature',
-      geometry: { type: 'Point', coordinates: [s.lng, s.lat] },
+      type: 'Feature', geometry: { type: 'Point', coordinates: [s.lng, s.lat] },
       properties: { name: s.name, shelter_ratio: s.shelter_ratio, color: shelterColor(s.shelter_ratio) }
     })) };
-
     q2Map.addSource('services', { type: 'geojson', data: geojson });
     q2Map.addLayer({ id: 'services-dot', type: 'circle', source: 'services',
-      paint: {
-        'circle-radius': 7,
-        'circle-color': ['get', 'color'],
-        'circle-stroke-width': 2,
-        'circle-stroke-color': '#fff',
-        'circle-opacity': 0.9,
-      }
-    });
-
-    // Labels as HTML markers
-    services.forEach(s => {
-      const el = document.createElement('div');
-      el.style.cssText = 'color:' + shelterColor(s.shelter_ratio) + ';font-size:9px;font-weight:500;text-shadow:0 0 3px #000,0 0 6px #000;pointer-events:none;white-space:nowrap;transform:translateX(-50%);margin-top:6px;';
-      el.textContent = s.name.length > 25 ? s.name.substring(0, 23) + '…' : s.name;
-      new maplibregl.Marker({ element: el, anchor: 'top' }).setLngLat([s.lng, s.lat]).addTo(q2Map);
+      paint: { 'circle-radius': 7, 'circle-color': ['get', 'color'], 'circle-stroke-width': 2, 'circle-stroke-color': '#fff', 'circle-opacity': 0.9 }
     });
 
     // Hover popup
@@ -706,24 +828,23 @@ function initQ2Map(services, areaFeature, serviceType) {
       q2Map.getCanvas().style.cursor = 'pointer';
       const p = e.features[0].properties;
       popup.setLngLat(e.lngLat)
-        .setHTML(`<div style="font-size:12px;"><b>${p.name}</b><br>Shelter ratio: <b style="color:${p.color};">${(p.shelter_ratio * 100).toFixed(1)}%</b></div>`)
+        .setHTML(`<div style="font-size:12px;"><b>${p.name}</b><br>Shelter: <b style="color:${p.color};">${(p.shelter_ratio * 100).toFixed(1)}%</b></div>`)
         .addTo(q2Map);
     });
     q2Map.on('mousemove', 'services-dot', e => { popup.setLngLat(e.lngLat); });
     q2Map.on('mouseleave', 'services-dot', () => { q2Map.getCanvas().style.cursor = ''; popup.remove(); });
 
-    // Fit to area or services
+    // Fit to area
     if (areaFeature) {
       const coords = areaFeature.geometry.type === 'MultiPolygon'
-        ? areaFeature.geometry.coordinates.flat(2)
-        : areaFeature.geometry.coordinates.flat(1);
-      const bounds = new maplibregl.LngLatBounds();
-      coords.forEach(c => bounds.extend(c));
-      q2Map.fitBounds(bounds, { padding: 50 });
+        ? areaFeature.geometry.coordinates.flat(2) : areaFeature.geometry.coordinates.flat(1);
+      q2MapAreaBounds = new maplibregl.LngLatBounds();
+      coords.forEach(c => q2MapAreaBounds.extend(c));
+      q2Map.fitBounds(q2MapAreaBounds, { padding: 50 });
     } else {
-      const bounds = new maplibregl.LngLatBounds();
-      services.forEach(s => bounds.extend([s.lng, s.lat]));
-      q2Map.fitBounds(bounds, { padding: 50 });
+      q2MapAreaBounds = new maplibregl.LngLatBounds();
+      services.forEach(s => q2MapAreaBounds.extend([s.lng, s.lat]));
+      q2Map.fitBounds(q2MapAreaBounds, { padding: 50 });
     }
   } catch(err) { console.error('Q2 map error:', err); } }
 
