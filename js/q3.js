@@ -207,12 +207,18 @@ function addQ3Choropleth() {
 
   // Hover popup (matches RQ1/RQ2 dark popup style via CSS)
   const q3Popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false });
-  q3Map.on('mouseenter', 'q3-fill', (e) => {
+  let q3HoveredArea = null;
+  q3Map.on('mousemove', 'q3-fill', (e) => {
     q3Map.getCanvas().style.cursor = 'pointer';
     if (!e.features || !e.features.length) return;
     const areaName = (e.features[0].properties.PLN_AREA_N || '').toUpperCase();
+    if (areaName === q3HoveredArea) {
+      q3Popup.setLngLat(e.lngLat);
+      return;
+    }
+    q3HoveredArea = areaName;
     const d = q3Data.find(x => x.name.toUpperCase() === areaName);
-    if (!d) return;
+    if (!d) { q3Popup.remove(); return; }
     const u = q3ComputeUrgencies()[d.name] || 0;
     q3Popup.setLngLat(e.lngLat).setHTML(
       `<div style="font-size:12px;"><b style="font-size:13px;">${q3TitleCase(d.name)}</b><br>` +
@@ -222,9 +228,9 @@ function addQ3Choropleth() {
       `<span style="color:#555;font-size:10px;">Click for details →</span></div>`
     ).addTo(q3Map);
   });
-  q3Map.on('mousemove', 'q3-fill', (e) => { if (e.lngLat) q3Popup.setLngLat(e.lngLat); });
   q3Map.on('mouseleave', 'q3-fill', () => {
     q3Map.getCanvas().style.cursor = '';
+    q3HoveredArea = null;
     q3Popup.remove();
   });
 }
