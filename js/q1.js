@@ -226,6 +226,8 @@ function openMapView(stationName) {
   const nSch = (pois.schools||[]).length;
   const nEld = (pois.elderly||[]).length;
   const nHc = (pois.healthcare||[]).length;
+  const nHdb = (pois.hdb||[]).length;
+  const nComm = (pois.commercial||[]).length;
   const mc = mismatchColor(summary.mismatch_norm);
   document.getElementById('map-legend-float').innerHTML = `
     <div class="mleg-title">Legend</div>
@@ -235,9 +237,11 @@ function openMapView(stationName) {
     <div class="mleg-item"><div class="mleg-dot" style="background:#4fc3f7;border:2px solid #fff;"></div> MRT / LRT Station</div>
     <div class="mleg-item"><div class="mleg-circle" style="border-color:${mc};"></div> 400m Radius</div>
     <div class="mleg-divider"></div>
-    <div class="mleg-item"><div class="mleg-dot" style="background:#ffeb3b;border:1.5px solid #fff;"></div> School <span style="color:var(--muted);margin-left:auto;">${nSch} facilities</span></div>
-    <div class="mleg-item"><div class="mleg-dot" style="background:#ce93d8;border:1.5px solid #fff;"></div> Elderly Facility <span style="color:var(--muted);margin-left:auto;">${nEld} facilities</span></div>
-    <div class="mleg-item"><div class="mleg-dot" style="background:#ef6c00;border:1.5px solid #fff;"></div> Clinic / Hospital <span style="color:var(--muted);margin-left:auto;">${nHc} facilities</span></div>
+    <div class="mleg-item"><div class="mleg-dot" style="background:#ffeb3b;border:1.5px solid #fff;"></div> School <span style="color:var(--muted);margin-left:auto;">${nSch}</span></div>
+    <div class="mleg-item"><div class="mleg-dot" style="background:#ce93d8;border:1.5px solid #fff;"></div> Elderly Facility <span style="color:var(--muted);margin-left:auto;">${nEld}</span></div>
+    <div class="mleg-item"><div class="mleg-dot" style="background:#ef6c00;border:1.5px solid #fff;"></div> Clinic / Hospital <span style="color:var(--muted);margin-left:auto;">${nHc}</span></div>
+    <div class="mleg-item"><div class="mleg-dot" style="background:#26c6da;border:1.5px solid #fff;"></div> HDB <span style="color:var(--muted);margin-left:auto;">${nHdb}</span></div>
+    <div class="mleg-item"><div class="mleg-dot" style="background:#ab47bc;border:1.5px solid #fff;"></div> Commercial <span style="color:var(--muted);margin-left:auto;">${nComm}</span></div>
   `;
 
   setTimeout(() => initMap(detail, summary), 50);
@@ -435,6 +439,8 @@ function initMap(detail, summary) {
       { key: 'schools',    color: '#ffeb3b', icon: '🏫', label: 'School' },
       { key: 'elderly',    color: '#ce93d8', icon: '🏥', label: 'Elderly' },
       { key: 'healthcare', color: '#ef6c00', icon: '⚕',  label: 'Healthcare' },
+      { key: 'hdb',        color: '#26c6da', icon: '🏠', label: 'HDB' },
+      { key: 'commercial', color: '#ab47bc', icon: '🏬', label: 'Commercial' },
     ];
     poiConfigs.forEach(cfg => {
       const items = pois[cfg.key] || [];
