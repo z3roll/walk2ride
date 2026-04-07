@@ -230,166 +230,118 @@ function renderQ2Chart() {
     true
   );
 
-  // Click a type violin → switch to Regional tab with that type selected
-  const typeToRegional = { 0: 'school', 1: 'health', 2: 'hdb', 3: 'commercial' };
+  // Click a type box → switch to Regional tab
   q2Chart.off('click');
-  q2Chart.on('click', params => {
-    let catIdx = -1;
-    if (params.data && params.data._catIdx !== undefined) catIdx = params.data._catIdx;
-    else if (Array.isArray(params.data)) catIdx = Math.round(params.data[0]);
-    else if (params.data && params.data.value) catIdx = Math.round(Array.isArray(params.data.value) ? params.data.value[0] : params.data.value);
-    if (catIdx < 0 || catIdx > 3) return;
+  q2Chart.on('click', () => {
     q2SwitchTab('regional');
-    q2SwitchRegional(typeToRegional[catIdx]);
   });
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   RENDER REGIONAL BREAKDOWN
+   RENDER REGIONAL BREAKDOWN — Stacked Bar Chart
    ═══════════════════════════════════════════════════════════════════ */
 function renderQ2Regional() {
   const services = window.SERVICES;
   if (!services || !services.length) return;
 
-  // Group by planning area for each type
-  const byTypeArea = { School: {}, Healthcare: {}, HDB: {}, Commercial: {} };
+  // Group by planning area: collect shelter ratios per type
+  const areaData = {};
   services.forEach(s => {
-    if (!byTypeArea[s.type]) return;
-    if (!byTypeArea[s.type][s.planning_area]) byTypeArea[s.type][s.planning_area] = [];
-    byTypeArea[s.type][s.planning_area].push(s);
+    if (!areaData[s.planning_area]) areaData[s.planning_area] = { School: [], Healthcare: [], HDB: [], Commercial: [] };
+    if (areaData[s.planning_area][s.type]) areaData[s.planning_area][s.type].push(s.shelter_ratio * 100);
   });
 
-  const topAreas = {};
-  for (const type of Object.keys(byTypeArea)) {
-    topAreas[type] = Object.entries(byTypeArea[type])
-      .sort((a, b) => b[1].length - a[1].length)
-      .slice(0, 8)
-      .map(e => e[0]);
-  }
+  // Top 15 areas by total facility count
+  const topAreas = Object.entries(areaData)
+    .sort((a, b) => {
+      const totA = Object.values(a[1]).reduce((s, v) => s + v.length, 0);
+      const totB = Object.values(b[1]).reduce((s, v) => s + v.length, 0);
+      return totB - totA;
+    })
+    .slice(0, 15)
+    .map(e => e[0]);
 
-  // Keep legacy aliases for compatibility
-  const schoolsByArea = byTypeArea.School;
-  const healthByArea = byTypeArea.Healthcare;
-  const topSchoolAreas = topAreas.School;
-  const topHealthAreas = topAreas.Healthcare;
+  const categories = topAreas.map(a => a.charAt(0) + a.slice(1).toLowerCase());
 
-  // Distinct colors per area
-  const AREA_PALETTE = ['#4fc3f7','#ffeb3b','#ef6c00','#ce93d8','#4caf50','#ff7043','#26c6da','#ec407a'];
-  const schoolColors = {};
-  topSchoolAreas.forEach((a, i) => { schoolColors[a] = AREA_PALETTE[i % AREA_PALETTE.length]; });
-  const healthColors = {};
-  topHealthAreas.forEach((a, i) => { healthColors[a] = AREA_PALETTE[i % AREA_PALETTE.length]; });
+  // Store area mapping for click handling
+  window._q2RegionalAreas = topAreas;
 
   if (!q2RegionalChart) q2RegionalChart = echarts.init(document.getElementById('q2-chart'), 'dark');
 
-  // Combine into one chart with two y-axis groups using a split layout
-  // We will render them stacked vertically via two grids
-  const schoolData = {};
-  topSchoolAreas.forEach(a => { schoolData[a] = schoolsByArea[a]; });
-  const healthData = {};
-  topHealthAreas.forEach(a => { healthData[a] = healthByArea[a]; });
+  const series = TYPE_ORDER.map(type => ({
+    name: type,
+    type: 'bar',
+    stack: 'total',
+    data: topAreas.map(a => {
+      const vals = areaData[a][type];
+      return vals.length ? +mean(vals).toFixed(1) : 0;
+    }),
+    itemStyle: { color: TYPE_COLORS[type], opacity: 0.7 },
+    emphasis: { itemStyle: { borderColor: '#fff', borderWidth: 2 } },
+  }));
 
-  // Use a single chart with togglable sub-views: render schools first
-  const schoolOpt = buildViolinOption(
-    topSchoolAreas.map(a => a.charAt(0) + a.slice(1).toLowerCase()),
-    (() => {
-      const mapped = {};
-      topSchoolAreas.forEach(a => {
-        mapped[a.charAt(0) + a.slice(1).toLowerCase()] = schoolsByArea[a];
-      });
-      return mapped;
-    })(),
-    (() => {
-      const mapped = {};
-      topSchoolAreas.forEach(a => {
-        mapped[a.charAt(0) + a.slice(1).toLowerCase()] = schoolColors[a];
-      });
-      return mapped;
-    })(),
-    'Schools — Shelter Ratio by Planning Area (Top 8)'
-  );
+  q2RegionalChart.setOption({
+    backgroundColor: '#0f1117',
+    animation: true,
+    animationDuration: 600,
+    title: {
+      text: 'Avg Shelter Ratio by Planning Area — Top 15',
+      left: 'center',
+      top: 12,
+      textStyle: { fontSize: 14, fontWeight: 600, color: '#ccc' },
+    },
+    grid: { left: 70, right: 30, top: 55, bottom: 80 },
+    legend: {
+      data: TYPE_ORDER,
+      bottom: 10,
+      textStyle: { color: '#aaa', fontSize: 11 },
+      itemWidth: 12, itemHeight: 12,
+    },
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' },
+      backgroundColor: '#1e222bf0',
+      borderColor: '#3a3f4a',
+      textStyle: { color: '#e8eaed', fontSize: 12 },
+      formatter: params => {
+        let html = `<b>${params[0].axisValue}</b><br>`;
+        params.forEach(p => {
+          if (p.value > 0) {
+            html += `<span style="color:${TYPE_COLORS[p.seriesName]};">●</span> ${p.seriesName}: <b>${p.value.toFixed(1)}%</b><br>`;
+          }
+        });
+        return html;
+      },
+    },
+    xAxis: {
+      type: 'category',
+      data: categories,
+      axisLabel: { color: '#888', fontSize: 10, fontWeight: 600, interval: 0, rotate: 35 },
+      axisLine: { lineStyle: { color: '#2a2f3a' } },
+    },
+    yAxis: {
+      name: 'Avg Shelter Ratio (%)',
+      nameLocation: 'middle',
+      nameGap: 48,
+      nameTextStyle: { fontSize: 12, color: '#888' },
+      type: 'value',
+      axisLabel: { formatter: v => v + '%', color: '#666', fontSize: 10 },
+      splitLine: { lineStyle: { color: '#1c2029' } },
+      axisLine: { lineStyle: { color: '#2a2f3a' } },
+    },
+    series,
+  }, true);
 
-  const healthOpt = buildViolinOption(
-    topHealthAreas.map(a => a.charAt(0) + a.slice(1).toLowerCase()),
-    (() => {
-      const mapped = {};
-      topHealthAreas.forEach(a => {
-        mapped[a.charAt(0) + a.slice(1).toLowerCase()] = healthByArea[a];
-      });
-      return mapped;
-    })(),
-    (() => {
-      const mapped = {};
-      topHealthAreas.forEach(a => {
-        mapped[a.charAt(0) + a.slice(1).toLowerCase()] = healthColors[a];
-      });
-      return mapped;
-    })(),
-    'Healthcare — Shelter Ratio by Planning Area (Top 8)'
-  );
-
-  // HDB by planning area
-  const hdbOpt = buildViolinOption(
-    topAreas.HDB.map(a => a.charAt(0) + a.slice(1).toLowerCase()),
-    (() => { const m = {}; topAreas.HDB.forEach(a => { m[a.charAt(0) + a.slice(1).toLowerCase()] = byTypeArea.HDB[a]; }); return m; })(),
-    (() => { const m = {}; topAreas.HDB.forEach((a, i) => { m[a.charAt(0) + a.slice(1).toLowerCase()] = AREA_PALETTE[i % AREA_PALETTE.length]; }); return m; })(),
-    'HDB — Shelter Ratio by Planning Area (Top 8)'
-  );
-
-  // Commercial by planning area
-  const commOpt = buildViolinOption(
-    topAreas.Commercial.map(a => a.charAt(0) + a.slice(1).toLowerCase()),
-    (() => { const m = {}; topAreas.Commercial.forEach(a => { m[a.charAt(0) + a.slice(1).toLowerCase()] = byTypeArea.Commercial[a]; }); return m; })(),
-    (() => { const m = {}; topAreas.Commercial.forEach((a, i) => { m[a.charAt(0) + a.slice(1).toLowerCase()] = AREA_PALETTE[i % AREA_PALETTE.length]; }); return m; })(),
-    'Commercial — Shelter Ratio by Planning Area (Top 8)'
-  );
-
-  // Store for toggling + area name mapping
-  window._q2RegionalOpts = { school: schoolOpt, health: healthOpt, hdb: hdbOpt, commercial: commOpt };
-  window._q2RegionalAreas = { school: topSchoolAreas, health: topHealthAreas, hdb: topAreas.HDB, commercial: topAreas.Commercial };
-  window._q2RegionalTypeMap = { school: 'School', health: 'Healthcare', hdb: 'HDB', commercial: 'Commercial' };
-  window._q2RegionalSchoolOpt = schoolOpt;
-  window._q2RegionalHealthOpt = healthOpt;
-  window._q2RegionalSchoolAreas = topSchoolAreas;
-  window._q2RegionalHealthAreas = topHealthAreas;
-  window._q2RegionalCurrentType = 'school';
-
-  q2RegionalChart.setOption(schoolOpt, true);
-  setupQ2RegionalClick();
-}
-
-function setupQ2RegionalClick() {
-  if (!q2RegionalChart) return;
+  // Click bar → open map for that area + type
   q2RegionalChart.off('click');
   q2RegionalChart.on('click', params => {
-    let catIdx = -1;
-    if (params.data && params.data._catIdx !== undefined) {
-      catIdx = params.data._catIdx;
-    } else if (Array.isArray(params.data)) {
-      catIdx = Math.round(params.data[0]);
-    } else if (params.data && params.data.value) {
-      catIdx = Math.round(Array.isArray(params.data.value) ? params.data.value[0] : params.data.value);
-    }
-    if (catIdx < 0 || catIdx >= 8) return;
-
-    const curType = window._q2RegionalCurrentType;
-    const areas = window._q2RegionalAreas && window._q2RegionalAreas[curType];
-    const typeLabel = window._q2RegionalTypeMap && window._q2RegionalTypeMap[curType];
-    if (areas && typeLabel && catIdx < areas.length) {
-      openQ2Map(areas[catIdx], typeLabel);
+    if (params.componentType !== 'series') return;
+    const areaIdx = params.dataIndex;
+    const type = params.seriesName;
+    if (areaIdx >= 0 && areaIdx < topAreas.length && type) {
+      openQ2Map(topAreas[areaIdx], type);
     }
   });
-}
-
-function q2SwitchRegional(type) {
-  document.querySelectorAll('.q2-regional-tab').forEach(t => {
-    t.classList.toggle('active', t.dataset.rtype === type);
-  });
-  if (!q2RegionalChart) return;
-  window._q2RegionalCurrentType = type;
-  const opt = window._q2RegionalOpts && window._q2RegionalOpts[type];
-  if (opt) q2RegionalChart.setOption(opt, true);
-  setupQ2RegionalClick();
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -460,13 +412,6 @@ function renderQ2Sidebar() {
     </div>
 
     <div id="q2-tab-regional" style="display:none;">
-      <div class="view-tabs" style="margin-bottom:12px;">
-        <button class="view-tab q2-regional-tab active" data-rtype="school" onclick="q2SwitchRegional('school')">Schools</button>
-        <button class="view-tab q2-regional-tab" data-rtype="health" onclick="q2SwitchRegional('health')">Healthcare</button>
-        <button class="view-tab q2-regional-tab" data-rtype="hdb" onclick="q2SwitchRegional('hdb')">HDB</button>
-        <button class="view-tab q2-regional-tab" data-rtype="commercial" onclick="q2SwitchRegional('commercial')">Commercial</button>
-      </div>
-
       <div class="narrative">
         <div class="section-tag"><div class="dot" style="background:#ffeb3b;"></div>Regional Disparities</div>
         Shelter coverage varies dramatically across planning areas. Mature HDB towns like <strong>Tampines</strong>, <strong>Bedok</strong>, and <strong>Ang Mo Kio</strong> generally provide better sheltered connectivity to schools, while newer developments and CBD-adjacent areas lag behind.<br><br>
@@ -627,9 +572,10 @@ function q2ToggleZoomService(serviceName) {
     const lat = svc.lat, lng = svc.lng;
     const svcColor = shelterColor(svc.shelter_ratio);
     const infra = window.AREA_INFRA;
-    const polyKey = q2MapCurrentType === 'School' ? '_school_polygons' : '_health_polygons';
+    const polyKey = { School: '_school_polygons', Healthcare: '_health_polygons', HDB: '_hdb_polygons', Commercial: '_commercial_polygons' }[q2MapCurrentType] || '_school_polygons';
     const allPolys = infra[polyKey] || {};
     const polyMatch = Object.entries(allPolys).find(([k]) => k.startsWith(serviceName + '_'));
+    console.log('[Q2 zoom]', 'type:', q2MapCurrentType, 'polyKey:', polyKey, 'polyCount:', Object.keys(allPolys).length, 'name:', serviceName, 'match:', !!polyMatch);
 
     // Compute minimum enclosing circle of polygon + 100m
     let circleLat = lat, circleLng = lng, circleR = 200;
@@ -776,12 +722,12 @@ function q2ToggleZoomService(serviceName) {
           properties: { first_seen: s.fs || 'Unknown', type_desc: s.td || 'Overhead Bridge' }
         })) };
         q2Map.addSource('zoom-br', { type: 'geojson', data: brGeo });
-        q2Map.addLayer({ id: 'zoom-br', type: 'line', source: 'zoom-br', paint: { 'line-color': '#ff9800', 'line-width': 4, 'line-opacity': 0.85 } }, 'services-dot');
+        q2Map.addLayer({ id: 'zoom-br', type: 'line', source: 'zoom-br', paint: { 'line-color': '#4caf50', 'line-width': 4, 'line-opacity': 0.85 } }, 'services-dot');
         const zBrPopup = new maplibregl.Popup({ closeButton: false, closeOnClick: false });
         q2Map.on('mouseenter', 'zoom-br', e => {
           q2Map.getCanvas().style.cursor = 'pointer';
           const p = e.features[0].properties;
-          zBrPopup.setLngLat(e.lngLat).setHTML(`<div style="font-size:12px;"><b style="color:#ff9800;">${p.type_desc}</b><br>${p.first_seen <= '2019-01' ? 'Built before 2019' : 'First recorded: ' + p.first_seen}</div>`).addTo(q2Map);
+          zBrPopup.setLngLat(e.lngLat).setHTML(`<div style="font-size:12px;"><b style="color:#4caf50;">${p.type_desc}</b><br>${p.first_seen <= '2019-01' ? 'Built before 2019' : 'First recorded: ' + p.first_seen}</div>`).addTo(q2Map);
         });
         q2Map.on('mousemove', 'zoom-br', e => { zBrPopup.setLngLat(e.lngLat); });
         q2Map.on('mouseleave', 'zoom-br', () => { q2Map.getCanvas().style.cursor = ''; zBrPopup.remove(); });
@@ -873,7 +819,7 @@ function renderQ2MapLegend(serviceType, isZoomed) {
       <div style="width:18px;height:3px;background:#4caf50;border-radius:2px;"></div> <span>Covered Linkway</span>
     </div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-      <div style="width:18px;height:3px;background:#ff9800;border-radius:2px;"></div> <span>Overhead Bridge</span>
+      <div style="width:18px;height:3px;background:#4caf50;border-radius:2px;"></div> <span>Overhead Bridge</span>
     </div>
     ${isZoomed ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
       <div style="width:14px;height:14px;border:2px solid #fff;border-radius:3px;box-sizing:border-box;"></div> <span>Building</span>
@@ -941,12 +887,12 @@ function initQ2Map(services, areaFeature, areaName) {
           type: 'Feature', geometry: { type: 'LineString', coordinates: s.c }, properties: { first_seen: s.fs || 'Unknown', type_desc: s.td || 'Overhead Bridge' }
         })) };
         q2Map.addSource('area-br', { type: 'geojson', data: brGeo });
-        q2Map.addLayer({ id: 'area-br', type: 'line', source: 'area-br', paint: { 'line-color': '#ff9800', 'line-width': 2.5, 'line-opacity': 0.5 } });
+        q2Map.addLayer({ id: 'area-br', type: 'line', source: 'area-br', paint: { 'line-color': '#4caf50', 'line-width': 2.5, 'line-opacity': 0.5 } });
         const brPopup = new maplibregl.Popup({ closeButton: false, closeOnClick: false });
         q2Map.on('mouseenter', 'area-br', e => {
           q2Map.getCanvas().style.cursor = 'pointer';
           const p = e.features[0].properties;
-          brPopup.setLngLat(e.lngLat).setHTML(`<div style="font-size:12px;"><b style="color:#ff9800;">${p.type_desc}</b><br>${p.first_seen <= '2019-01' ? 'Built before 2019' : 'First recorded: ' + p.first_seen}</div>`).addTo(q2Map);
+          brPopup.setLngLat(e.lngLat).setHTML(`<div style="font-size:12px;"><b style="color:#4caf50;">${p.type_desc}</b><br>${p.first_seen <= '2019-01' ? 'Built before 2019' : 'First recorded: ' + p.first_seen}</div>`).addTo(q2Map);
         });
         q2Map.on('mousemove', 'area-br', e => { brPopup.setLngLat(e.lngLat); });
         q2Map.on('mouseleave', 'area-br', () => { q2Map.getCanvas().style.cursor = ''; brPopup.remove(); });

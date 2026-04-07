@@ -73,8 +73,8 @@ async function loadData() {
 
 window.AREA_INFRA = null;
 async function loadAreaInfra() {
-  if (window.AREA_INFRA) return window.AREA_INFRA;
-  const resp = await fetch('data/area_infra.json');
+  if (window.AREA_INFRA && window.AREA_INFRA._hdb_polygons) return window.AREA_INFRA;
+  const resp = await fetch('data/area_infra.json?v=2');
   window.AREA_INFRA = await resp.json();
   return window.AREA_INFRA;
 }
