@@ -41,11 +41,11 @@ function renderChart(highlightGroup) {
     const isFiltered = s.mismatch_norm < filterMin || s.mismatch_norm > filterMax;
     return {
       value: [s.passenger_volume, s.shelter_ratio * 100],
-      symbolSize: isFiltered ? 0 : (isD ? size * 0.7 : size),
+      symbolSize: isFiltered ? size * 0.7 : (isD ? size * 0.7 : size),
       name: shortName(s.station),
-      itemStyle: { color: mismatchColor(s.mismatch_norm), opacity: isFiltered ? 0 : (isD ? 0.12 : 0.82), borderColor: isH ? '#fff' : 'transparent', borderWidth: isH ? 2 : 0 },
+      itemStyle: { color: mismatchColor(s.mismatch_norm), opacity: isFiltered ? 0.12 : (isD ? 0.12 : 0.82), borderColor: isH ? '#fff' : 'transparent', borderWidth: isH ? 2 : 0 },
       label: { show: isH && !isFiltered, formatter: shortName(s.station), position: 'top', fontSize: 13, fontWeight: 700, color: '#fff', distance: 12, textBorderColor: '#000', textBorderWidth: 3, backgroundColor: 'rgba(30,34,43,0.85)', padding: [4, 8], borderRadius: 4 },
-      _raw: s,
+      _raw: s, _filtered: isFiltered,
     };
   });
 
@@ -66,6 +66,7 @@ function renderChart(highlightGroup) {
     tooltip: {
       trigger:'item', backgroundColor:'#1e222bf0', borderColor:'#3a3f4a', textStyle:{color:'#e8eaed',fontSize:12},
       formatter: p => {
+        if (p.data._filtered) return null;
         const s = p.data._raw;
         return `<b style="font-size:13px">${shortName(s.station)}</b><br/>
           <span style="color:${mismatchColor(s.mismatch_norm)};">&#9679;</span> Mismatch: <b>${s.mismatch_norm.toFixed(2)}</b><br/>
@@ -112,7 +113,7 @@ function renderSidebar() {
 
   document.getElementById('sidebar-content').innerHTML = `
     <div class="stats-row">
-      <div class="stat-card"><div class="label">Stations</div><div class="value" style="color:var(--accent);">${d.length}</div></div>
+      <div class="stat-card" style="flex:0.7;"><div class="label">Stations</div><div class="value" style="color:var(--accent);">${d.length}</div></div>
       <div class="stat-card"><div class="label">Avg Shelter</div><div class="value" style="color:${avgSr<0.2?'var(--orange)':'var(--green)'};">${(avgSr*100).toFixed(1)}%</div></div>
       <div class="stat-card"><div class="label">High Mismatch</div><div class="value" style="color:var(--red);">${highMismatch}</div><div class="detail">score &gt; 0.7</div></div>
     </div>
@@ -123,6 +124,14 @@ function renderSidebar() {
       <button class="view-tab" data-view="over_provisioned" onclick="switchView('over_provisioned')">Case C</button>
     </div>
     <div id="view-overview">
+      <div class="narrative">
+        <div class="section-tag"><div class="dot" style="background:var(--accent);"></div>Mismatch Score Calculation</div>
+        <div style="font-size:12px;line-height:1.8;">
+          <span style="color:#4fc3f7;">Demand</span> = 0.6 &times; ridership + 0.4 &times; rainfall<br>
+          <span style="color:#ef5350;">Mismatch</span> = Demand &times; (1 &minus; shelter_ratio)<br>
+          <span style="color:#ff9800;">Score</span> = normalize(Mismatch) &rarr; [0, 1]
+        </div>
+      </div>
       <div class="narrative">
         <div class="section-tag"><div class="dot" style="background:var(--accent);"></div>Overall Distribution</div>
         Among <strong>${d.length} MRT/LRT stations</strong>, avg sheltered coverage within 400m is only <strong>${(avgSr*100).toFixed(1)}%</strong>.
@@ -221,8 +230,7 @@ function openMapView(stationName) {
   document.getElementById('map-legend-float').innerHTML = `
     <div class="mleg-title">Legend</div>
     <div class="mleg-item"><div class="mleg-line" style="background:#bbb;height:3px;"></div> Footpath <span style="color:var(--muted);margin-left:auto;">${nFp} segments</span></div>
-    <div class="mleg-item"><div class="mleg-line" style="background:#4caf50;height:5px;"></div> Covered Linkway <span style="color:var(--muted);margin-left:auto;">${nCl} segments</span></div>
-    <div class="mleg-item"><div class="mleg-line" style="background:#ff9800;height:5px;"></div> Overhead Bridge <span style="color:var(--muted);margin-left:auto;">${nBr} segments</span></div>
+    <div class="mleg-item"><div class="mleg-line" style="background:#4caf50;height:5px;"></div> Covered Linkway / Bridge <span style="color:var(--muted);margin-left:auto;">${nCl + nBr} segments</span></div>
     <div class="mleg-divider"></div>
     <div class="mleg-item"><div class="mleg-dot" style="background:#4fc3f7;border:2px solid #fff;"></div> MRT / LRT Station</div>
     <div class="mleg-item"><div class="mleg-circle" style="border-color:${mc};"></div> 400m Radius</div>
@@ -399,19 +407,19 @@ function initMap(detail, summary) {
         properties: { first_seen: s.first_seen || 'Unknown', type_desc: s.type_desc || 'Overhead Bridge' }
       })) };
       map.addSource('bridges', { type: 'geojson', data: brGeo });
-      map.addLayer({ id: 'bridges', type: 'line', source: 'bridges', paint: { 'line-color': '#ff9800', 'line-width': 4, 'line-opacity': 0.85 } });
+      map.addLayer({ id: 'bridges', type: 'line', source: 'bridges', paint: { 'line-color': '#4caf50', 'line-width': 4, 'line-opacity': 0.85 } });
       const brPopup = new maplibregl.Popup({ closeButton: false, closeOnClick: false });
       map.on('mouseenter', 'bridges', e => {
         map.getCanvas().style.cursor = 'pointer';
         const p = e.features[0].properties;
         const label = p.first_seen <= '2019-01' ? 'Built before 2019' : 'First recorded: ' + p.first_seen;
-        brPopup.setLngLat(e.lngLat).setHTML(`<div style="font-size:12px;"><b style="color:#ff9800;">${p.type_desc}</b><br>${label}</div>`).addTo(map);
+        brPopup.setLngLat(e.lngLat).setHTML(`<div style="font-size:12px;"><b style="color:#4caf50;">${p.type_desc}</b><br>${label}</div>`).addTo(map);
       });
       map.on('mousemove', 'bridges', e => { brPopup.setLngLat(e.lngLat); });
       map.on('mouseleave', 'bridges', () => { map.getCanvas().style.cursor = ''; brPopup.remove(); });
     } else if (geo.overhead_bridges && geo.overhead_bridges.length) {
       map.addSource('bridges', { type: 'geojson', data: segsToGeoJSON(geo.overhead_bridges) });
-      map.addLayer({ id: 'bridges', type: 'line', source: 'bridges', paint: { 'line-color': '#ff9800', 'line-width': 4, 'line-opacity': 0.85 } });
+      map.addLayer({ id: 'bridges', type: 'line', source: 'bridges', paint: { 'line-color': '#4caf50', 'line-width': 4, 'line-opacity': 0.85 } });
     }
 
     map.addSource('station-pt', { type: 'geojson', data: { type: 'Feature', geometry: { type: 'Point', coordinates: [lng, lat] }, properties: {} } });
