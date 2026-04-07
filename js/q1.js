@@ -224,7 +224,6 @@ function openMapView(stationName) {
   const nCl = (geo.covered_linkways||[]).length;
   const nBr = (geo.overhead_bridges||[]).length;
   const nSch = (pois.schools||[]).length;
-  const nEld = (pois.elderly||[]).length;
   const nHc = (pois.healthcare||[]).length;
   const nHdb = (pois.hdb||[]).length;
   const nComm = (pois.commercial||[]).length;
@@ -234,11 +233,10 @@ function openMapView(stationName) {
     <div class="mleg-item"><div class="mleg-line" style="background:#bbb;height:3px;"></div> Footpath <span style="color:var(--muted);margin-left:auto;">${nFp} segments</span></div>
     <div class="mleg-item"><div class="mleg-line" style="background:#4caf50;height:5px;"></div> Covered Linkway / Bridge <span style="color:var(--muted);margin-left:auto;">${nCl + nBr} segments</span></div>
     <div class="mleg-divider"></div>
-    <div class="mleg-item"><div class="mleg-dot" style="background:#4fc3f7;border:2px solid #fff;"></div> MRT / LRT Station</div>
+    <div class="mleg-item"><div class="mleg-dot" style="background:#ff5722;border:2px solid #fff;"></div> MRT / LRT Station</div>
     <div class="mleg-item"><div class="mleg-circle" style="border-color:${mc};"></div> 400m Radius</div>
     <div class="mleg-divider"></div>
     <div class="mleg-item"><div class="mleg-dot" style="background:#ffeb3b;border:1.5px solid #fff;"></div> School <span style="color:var(--muted);margin-left:auto;">${nSch}</span></div>
-    <div class="mleg-item"><div class="mleg-dot" style="background:#ce93d8;border:1.5px solid #fff;"></div> Elderly Facility <span style="color:var(--muted);margin-left:auto;">${nEld}</span></div>
     <div class="mleg-item"><div class="mleg-dot" style="background:#ef6c00;border:1.5px solid #fff;"></div> Clinic / Hospital <span style="color:var(--muted);margin-left:auto;">${nHc}</span></div>
     <div class="mleg-item"><div class="mleg-dot" style="background:#26c6da;border:1.5px solid #fff;"></div> HDB <span style="color:var(--muted);margin-left:auto;">${nHdb}</span></div>
     <div class="mleg-item"><div class="mleg-dot" style="background:#ab47bc;border:1.5px solid #fff;"></div> Commercial <span style="color:var(--muted);margin-left:auto;">${nComm}</span></div>
@@ -427,7 +425,7 @@ function initMap(detail, summary) {
     }
 
     map.addSource('station-pt', { type: 'geojson', data: { type: 'Feature', geometry: { type: 'Point', coordinates: [lng, lat] }, properties: {} } });
-    map.addLayer({ id: 'station-pt', type: 'circle', source: 'station-pt', paint: { 'circle-radius': 8, 'circle-color': '#4fc3f7', 'circle-stroke-width': 3, 'circle-stroke-color': '#fff' } });
+    map.addLayer({ id: 'station-pt', type: 'circle', source: 'station-pt', paint: { 'circle-radius': 8, 'circle-color': '#ff5722', 'circle-stroke-width': 3, 'circle-stroke-color': '#fff' } });
     // Station name as HTML marker (no glyph dependency)
     const labelEl = document.createElement('div');
     labelEl.style.cssText = 'color:#fff;font-size:13px;font-weight:700;text-shadow:0 0 4px #000,0 0 8px #000;pointer-events:none;white-space:nowrap;transform:translate(-50%,-100%);margin-top:-18px;';
@@ -437,7 +435,6 @@ function initMap(detail, summary) {
     const pois = detail.pois || {};
     const poiConfigs = [
       { key: 'schools',    color: '#ffeb3b', icon: '🏫', label: 'School' },
-      { key: 'elderly',    color: '#ce93d8', icon: '🏥', label: 'Elderly' },
       { key: 'healthcare', color: '#ef6c00', icon: '⚕',  label: 'Healthcare' },
       { key: 'hdb',        color: '#26c6da', icon: '🏠', label: 'HDB' },
       { key: 'commercial', color: '#ab47bc', icon: '🏬', label: 'Commercial' },
