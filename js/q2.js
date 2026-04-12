@@ -1,10 +1,30 @@
 /* ═══════════════════════════════════════════════════════════════════
-   Q2 — Violin plots: Service connectivity & shelter ratio analysis
+   Q2 — HDB Coverage Tracking: Does HDB count predict shelter evenly?
    ═══════════════════════════════════════════════════════════════════ */
 
 let q2Chart = null;
-let q2RegionalChart = null;
-let q2CurrentTab = 'overview';
+let q2TimelineChart = null;
+
+// Two-family palette with a hard split at year 2000:
+//   y <  2000 → red shades   (deep red 1965 → light red 1999)
+//   y >= 2000 → green shades (light green 2000 → deep green 2012)
+function q2YearColor(y) {
+  function interp(c1, c2, t) {
+    const parse = h => [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)];
+    const [r1,g1,b1] = parse(c1);
+    const [r2,g2,b2] = parse(c2);
+    const r = Math.round(r1 + (r2-r1)*t);
+    const g = Math.round(g1 + (g2-g1)*t);
+    const b = Math.round(b1 + (b2-b1)*t);
+    return `rgb(${r},${g},${b})`;
+  }
+  if (y < 2000) {
+    const t = Math.max(0, Math.min(1, (y - 1965) / (1999 - 1965)));
+    return interp('#b71c1c', '#ef9a9a', t);   // deep red → light red
+  }
+  const t = Math.max(0, Math.min(1, (y - 2000) / (2012 - 2000)));
+  return interp('#a5d6a7', '#1b5e20', t);     // light green → deep green
+}
 
 const TYPE_COLORS = {
   School: '#ffeb3b',
@@ -15,24 +35,12 @@ const TYPE_COLORS = {
 
 const TYPE_ORDER = ['School', 'Healthcare', 'HDB', 'Commercial'];
 
-/* ── KDE (Gaussian kernel) ── */
-function kde(data, bandwidth, nPoints) {
-  if (!data.length) return [];
-  const min = Math.min(...data), max = Math.max(...data);
-  const range = max - min;
-  if (range === 0) return [[min, 1]];
-  const step = range / nPoints;
-  const points = [];
-  for (let x = min; x <= max + step * 0.5; x += step) {
-    let density = 0;
-    for (const d of data) {
-      density += Math.exp(-0.5 * ((x - d) / bandwidth) ** 2);
-    }
-    density /= (data.length * bandwidth * Math.sqrt(2 * Math.PI));
-    points.push([x, density]);
-  }
-  return points;
-}
+// Era colors for timeline chart
+const ERA_COLORS = {
+  pre2020:   '#616161',  // grey: legacy
+  y2020_2022:'#81c784',  // light green: interim
+  y2023_plus:'#4fc3f7',  // blue: recent push
+};
 
 /* ── Stats helpers ── */
 function mean(arr) { return arr.reduce((s, v) => s + v, 0) / arr.length; }
@@ -53,250 +61,286 @@ function quantile(arr, q) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   BOX PLOT + STRIP PLOT (by category)
+   CHART 1 (top): Scatter — residential HDB count vs covered linkway
+   length per planning area, both restricted to within 400m of MRT/LRT
+   stations in that area. Overlaid with a least-squares regression line
+   (dashed orange). Points coloured by mean HDB construction year using
+   a red (old) → green (new) visualMap.
    ═══════════════════════════════════════════════════════════════════ */
-function buildViolinOption(categories, dataByCategory, colors, title) {
-  const series = [];
+function renderQ2HdbScatter() {
+  const chart1 = window.AREA_CHART1;
+  if (!chart1) return;
 
-  // Precompute stats for each category
-  const statsMap = {};
-  categories.forEach(cat => {
-    const vals = (dataByCategory[cat] || []).map(d => d.shelter_ratio * 100);
-    statsMap[cat] = { vals };
-  });
+  // Pull mean HDB year (400m) from Chart 2 data so every point can be coloured
+  const chart2 = window.AREA_CHART2 || [];
+  const ymeanByName = {};
+  chart2.forEach(c => { ymeanByName[c.name] = c.year_mean; });
 
-  // Box plot elements: whiskers, IQR box, median, mean
-  categories.forEach((cat, catIdx) => {
-    const vals = statsMap[cat].vals;
-    if (!vals.length) return;
-    const q1 = quantile(vals, 0.25);
-    const q3 = quantile(vals, 0.75);
-    const iqr = q3 - q1;
-    const med = median(vals);
-    const m = mean(vals);
-    const color = colors[cat] || '#888';
-    const whiskerLo = Math.max(Math.min(...vals), q1 - 1.5 * iqr);
-    const whiskerHi = Math.min(Math.max(...vals), q3 + 1.5 * iqr);
+  // Source of truth: area_chart1_400m.json (400m-from-station, residential HDB)
+  const areas = Object.values(chart1)
+    .filter(b => b.n_hdb_400m >= 5 && b.lw_length_m > 0)
+    .map(b => ({
+      name: b.name,
+      display: b.name.charAt(0) + b.name.slice(1).toLowerCase(),
+      n_hdb_400m: b.n_hdb_400m,
+      lw_length_m: b.lw_length_m,
+      n_lw_400m: b.n_lw_400m,
+      n_stations: b.n_stations,
+      year_mean: ymeanByName[b.name] || null,
+      _raw: b,
+    }));
 
-    // Whisker lines (vertical)
-    series.push({
-      type: 'custom',
-      renderItem: function(params, api) {
-        const lo = api.coord([catIdx, whiskerLo]);
-        const hi = api.coord([catIdx, whiskerHi]);
-        return {
-          type: 'group',
-          children: [
-            // Vertical whisker line
-            { type: 'line', shape: { x1: lo[0], y1: lo[1], x2: hi[0], y2: hi[1] }, style: { stroke: color, lineWidth: 1.5, opacity: 0.5 } },
-            // Bottom cap
-            { type: 'line', shape: { x1: lo[0] - 10, y1: lo[1], x2: lo[0] + 10, y2: lo[1] }, style: { stroke: color, lineWidth: 1.5, opacity: 0.5 } },
-            // Top cap
-            { type: 'line', shape: { x1: hi[0] - 10, y1: hi[1], x2: hi[0] + 10, y2: hi[1] }, style: { stroke: color, lineWidth: 1.5, opacity: 0.5 } },
-          ],
-        };
-      },
-      data: [[catIdx]],
-      z: 1,
-    });
+  if (!q2Chart) q2Chart = echarts.init(document.getElementById('q2-chart'), 'dark');
 
-    // IQR box (filled)
-    series.push({
-      type: 'custom',
-      renderItem: function(params, api) {
-        const bottom = api.coord([catIdx, q1]);
-        const top = api.coord([catIdx, q3]);
-        const halfW = 18;
-        return {
-          type: 'rect',
-          shape: { x: bottom[0] - halfW, y: top[1], width: halfW * 2, height: bottom[1] - top[1] },
-          style: { fill: color, opacity: 0.15, stroke: color, lineWidth: 2 },
-        };
-      },
-      data: [[catIdx]],
-      z: 3,
-    });
+  function pearson(xs, ys) {
+    const n = xs.length;
+    if (n < 2) return 0;
+    const mx = xs.reduce((s, v) => s + v, 0) / n;
+    const my = ys.reduce((s, v) => s + v, 0) / n;
+    let num = 0, dx2 = 0, dy2 = 0;
+    for (let i = 0; i < n; i++) {
+      const dx = xs[i] - mx, dy = ys[i] - my;
+      num += dx * dy; dx2 += dx * dx; dy2 += dy * dy;
+    }
+    return (dx2 === 0 || dy2 === 0) ? 0 : num / Math.sqrt(dx2 * dy2);
+  }
+  const xs = areas.map(a => a.n_hdb_400m);
+  const ys = areas.map(a => a.lw_length_m);
+  const rArea = pearson(xs, ys);
 
-    // Median line
-    series.push({
-      type: 'custom',
-      renderItem: function(params, api) {
-        const center = api.coord([catIdx, med]);
-        return {
-          type: 'line',
-          shape: { x1: center[0] - 18, y1: center[1], x2: center[0] + 18, y2: center[1] },
-          style: { stroke: '#fff', lineWidth: 2.5 },
-        };
-      },
-      data: [[catIdx]],
-      z: 4,
-    });
+  // Least-squares linear regression: y = slope*x + intercept
+  function linreg(xs, ys) {
+    const n = xs.length;
+    const mx = xs.reduce((s, v) => s + v, 0) / n;
+    const my = ys.reduce((s, v) => s + v, 0) / n;
+    let num = 0, den = 0;
+    for (let i = 0; i < n; i++) {
+      num += (xs[i] - mx) * (ys[i] - my);
+      den += (xs[i] - mx) ** 2;
+    }
+    const slope = den === 0 ? 0 : num / den;
+    const intercept = my - slope * mx;
+    return { slope, intercept };
+  }
+  const { slope, intercept } = linreg(xs, ys);
+  const xMin = Math.min(...xs);
+  const xMax = Math.max(...xs);
+  // Draw the fitted line slightly past the data range on both sides
+  const xPad = (xMax - xMin) * 0.03;
+  const fitX0 = Math.max(0, xMin - xPad);
+  const fitX1 = xMax + xPad;
+  const regressionLine = [
+    [+fitX0.toFixed(2), +(slope * fitX0 + intercept).toFixed(2)],
+    [+fitX1.toFixed(2), +(slope * fitX1 + intercept).toFixed(2)],
+  ];
 
-    // Mean diamond marker
-    series.push({
-      type: 'scatter',
-      data: [{ value: [catIdx, m], _catIdx: catIdx }],
-      symbol: 'diamond',
-      symbolSize: 10,
-      itemStyle: { color: '#fff', borderColor: color, borderWidth: 2 },
-      z: 5,
-    });
-  });
+  // Uniform dot colour (year colouring reserved for Chart 2)
+  const seriesData = areas.map(a => ({
+    name: a.display,
+    value: [a.n_hdb_400m, a.lw_length_m],
+    itemStyle: { color: '#4fc3f7', borderColor: '#fff', borderWidth: 0.6, opacity: 0.85 },
+    _raw: a,
+  }));
 
-  // Strip plot: jittered scatter points (more visible than before)
-  categories.forEach((cat, catIdx) => {
-    const vals = statsMap[cat].vals;
-    if (!vals.length) return;
-    const color = colors[cat] || '#888';
-    const scatterData = vals.map(v => {
-      const jitter = (Math.random() - 0.5) * 0.5;
-      return {
-        value: [catIdx + jitter, v],
-        _catIdx: catIdx,
-        itemStyle: { color: color, opacity: 0.4 },
+  // Label the top-6 areas by HDB count to anchor the view
+  const sortedByHdb = [...seriesData].sort((a, b) => b.value[0] - a.value[0]);
+  const labelSet = new Set(sortedByHdb.slice(0, 6).map(d => d.name));
+  seriesData.forEach(d => {
+    if (labelSet.has(d.name)) {
+      d.label = {
+        show: true,
+        formatter: d.name,
+        position: 'top',
+        fontSize: 10,
+        color: '#fff',
+        fontWeight: 600,
+        textBorderColor: '#000',
+        textBorderWidth: 2,
       };
-    });
-    series.push({
-      type: 'scatter',
-      data: scatterData,
-      symbolSize: 3.5,
-      z: 2,
-    });
+    }
   });
 
-  return {
+  q2Chart.setOption({
     backgroundColor: '#0f1117',
     animation: true,
-    animationDuration: 600,
+    animationDuration: 700,
     title: {
-      text: title,
-      left: 'center',
-      top: 12,
-      textStyle: { fontSize: 14, fontWeight: 600, color: '#ccc' },
+      text: 'Number of Residential HDBs vs Covered Linkway Length',
+      left: 16, top: 10,
+      textStyle: { fontSize: 13, fontWeight: 600, color: '#ddd' },
     },
-    grid: { left: 70, right: 40, top: 55, bottom: 60 },
+    grid: { left: 70, right: 40, top: 60, bottom: 50 },
     tooltip: {
       trigger: 'item',
       backgroundColor: '#1e222bf0',
       borderColor: '#3a3f4a',
       textStyle: { color: '#e8eaed', fontSize: 12 },
-      formatter: function(p) {
-        if (p.seriesType === 'scatter' && p.data && p.data.value) {
-          const ci = Math.round(p.data.value[0]);
-          const cat = categories[ci] || '';
-          return `<b>${cat}</b><br>Shelter ratio: <b>${p.data.value[1].toFixed(1)}%</b>`;
-        }
-        return '';
+      formatter: p => {
+        if (!p.data || !p.data._raw) return '';
+        const a = p.data._raw;
+        const disp = a.name.charAt(0) + a.name.slice(1).toLowerCase();
+        const yrTxt = a.year_mean ? `<span style="color:#888;">HDB mean year:</span> <b>${a.year_mean.toFixed(1)}</b><br/>` : '';
+        return `<b style="font-size:13px;">${disp}</b><br/>
+          <span style="color:#888;">Residential HDB (400m):</span> <b>${a.n_hdb_400m}</b><br/>
+          <span style="color:#888;">Covered Linkway length:</span> <b>${(a.lw_length_m/1000).toFixed(2)} km</b>
+          <span style="color:#666;">(${a.n_lw_400m} segments)</span><br/>
+          <span style="color:#888;">Stations in area:</span> <b>${a.n_stations}</b><br/>
+          ${yrTxt}`;
       },
     },
     xAxis: {
-      type: 'category',
-      data: categories,
-      axisLabel: { color: '#888', fontSize: 10, fontWeight: 600, interval: 0 },
-      axisLine: { lineStyle: { color: '#2a2f3a' } },
-      splitLine: { show: false },
-    },
-    yAxis: {
-      name: 'Shelter Ratio (%)',
+      name: 'Number of Residential HDBs',
       nameLocation: 'middle',
-      nameGap: 48,
-      nameTextStyle: { fontSize: 12, color: '#888' },
+      nameGap: 30,
+      nameTextStyle: { fontSize: 11, color: '#888' },
       type: 'value',
-      axisLabel: { formatter: v => v + '%', color: '#666', fontSize: 10 },
+      axisLabel: { color: '#888', fontSize: 10 },
       splitLine: { lineStyle: { color: '#1c2029' } },
       axisLine: { lineStyle: { color: '#2a2f3a' } },
     },
-    series,
-  };
-}
+    yAxis: {
+      name: 'Covered Linkway Length (m)',
+      nameLocation: 'middle',
+      nameGap: 48,
+      nameTextStyle: { fontSize: 11, color: '#888' },
+      type: 'value',
+      axisLabel: { color: '#888', fontSize: 10 },
+      splitLine: { lineStyle: { color: '#1c2029' } },
+      axisLine: { lineStyle: { color: '#2a2f3a' } },
+    },
+    series: [
+      {
+        name: 'Regression',
+        type: 'line',
+        data: regressionLine,
+        showSymbol: false,
+        silent: true,
+        z: 1,
+        lineStyle: {
+          color: '#ff9800',
+          width: 2,
+          type: 'dashed',
+          opacity: 0.85,
+        },
+        tooltip: { show: false },
+      },
+      {
+        name: 'Area',
+        type: 'scatter',
+        symbolSize: 14,
+        data: seriesData,
+        z: 2,
+        emphasis: { itemStyle: { borderColor: '#fff', borderWidth: 2 } },
+      },
+    ],
+  }, true);
 
-/* ═══════════════════════════════════════════════════════════════════
-   RENDER MAIN Q2 CHART
-   ═══════════════════════════════════════════════════════════════════ */
-function renderQ2Chart() {
-  const services = window.SERVICES;
-  if (!services || !services.length) return;
-
-  const byType = {};
-  TYPE_ORDER.forEach(t => { byType[t] = []; });
-  services.forEach(s => {
-    if (byType[s.type]) byType[s.type].push(s);
-  });
-
-  if (!q2Chart) q2Chart = echarts.init(document.getElementById('q2-chart'), 'dark');
-  q2Chart.setOption(
-    buildViolinOption(TYPE_ORDER, byType, TYPE_COLORS,
-      'Shelter Ratio Distribution by Service Type — ' + services.length + ' Services'),
-    true
-  );
-
-  // Click a type box → switch to Regional tab
   q2Chart.off('click');
-  q2Chart.on('click', () => {
-    q2SwitchTab('regional');
+  q2Chart.on('click', params => {
+    if (params.data && params.data._raw) {
+      openQ2Map(params.data._raw.name);
+    }
   });
 }
 
-/* ═══════════════════════════════════════════════════════════════════
-   RENDER REGIONAL BREAKDOWN — Stacked Bar Chart
-   ═══════════════════════════════════════════════════════════════════ */
-function renderQ2Regional() {
-  const services = window.SERVICES;
-  if (!services || !services.length) return;
+// Map HDB median construction year to color — red = oldest, blue = newest
+function medianYearColor(year) {
+  if (year <= 1980) return '#ef5350';  // deep red
+  if (year <= 1988) return '#ff9800';  // orange
+  if (year <= 1995) return '#ffeb3b';  // yellow
+  if (year <= 2002) return '#81c784';  // light green
+  return '#4fc3f7';                     // blue: newest (2003+)
+}
 
-  // Group by planning area: collect shelter ratios per type
-  const areaData = {};
-  services.forEach(s => {
-    if (!areaData[s.planning_area]) areaData[s.planning_area] = { School: [], Healthcare: [], HDB: [], Commercial: [] };
-    if (areaData[s.planning_area][s.type]) areaData[s.planning_area][s.type].push(s.shelter_ratio * 100);
+/* ═══════════════════════════════════════════════════════════════════
+   CHART 2 (bottom): Linkway length per residential HDB — area-level,
+   sorted old → new by mean HDB construction year.
+   Y = lw_length_m / n_hdb_400m — metres of covered linkway per
+       residential HDB block inside the area's 400m MRT/LRT buffer.
+   Bars coloured by mean HDB year (red old → green new), so the palette
+   lines up with Chart 1's visualMap scheme.
+   ═══════════════════════════════════════════════════════════════════ */
+function renderQ2Timeline() {
+  const chart2 = window.AREA_CHART2 || [];
+  // Filter: need full-area data, exclude tiny-HDB outliers (Rochor, Bukit Timah)
+  const areas = chart2.filter(a =>
+    a.year_mean && (a.n_hdb_full || a.n_hdb_400m) >= 50 &&
+    (a.lw_length_full || a.lw_length_m) > 0
+  ).sort((a, b) => a.year_mean - b.year_mean);
+  if (!areas.length) return;
+
+  if (!q2TimelineChart) q2TimelineChart = echarts.init(document.getElementById('q2-chart-timeline'), 'dark');
+
+  const fmtArea = a => a.name.charAt(0) + a.name.slice(1).toLowerCase();
+  const categories = areas.map(fmtArea);
+
+  // Full-area metrics
+  const perHdbArr = areas.map(a => {
+    const h = a.n_hdb_full || a.n_hdb_400m;
+    const l = a.lw_length_full || a.lw_length_m;
+    return +(l / h).toFixed(1);
+  });
+  const perKArr = areas.map(a => {
+    const l = a.lw_length_full || a.lw_length_m;
+    const p = a.total_pop || 0;
+    return p > 0 ? +(l / (p / 1000)).toFixed(1) : 0;
   });
 
-  // Top 15 areas by total facility count
-  const topAreas = Object.entries(areaData)
-    .sort((a, b) => {
-      const totA = Object.values(a[1]).reduce((s, v) => s + v.length, 0);
-      const totB = Object.values(b[1]).reduce((s, v) => s + v.length, 0);
-      return totB - totA;
-    })
-    .slice(0, 15)
-    .map(e => e[0]);
-
-  const categories = topAreas.map(a => a.charAt(0) + a.slice(1).toLowerCase());
-
-  // Store area mapping for click handling
-  window._q2RegionalAreas = topAreas;
-
-  if (!q2RegionalChart) q2RegionalChart = echarts.init(document.getElementById('q2-chart'), 'dark');
-
-  const series = TYPE_ORDER.map(type => ({
-    name: type,
-    type: 'bar',
-    stack: 'total',
-    data: topAreas.map(a => {
-      const vals = areaData[a][type];
-      return vals.length ? +mean(vals).toFixed(1) : 0;
-    }),
-    itemStyle: { color: TYPE_COLORS[type], opacity: 0.7 },
-    emphasis: { itemStyle: { borderColor: '#fff', borderWidth: 2 } },
+  const barData = perHdbArr.map((v, i) => ({
+    value: v,
+    itemStyle: { color: q2YearColor(areas[i].year_mean), borderColor: '#0f1117', borderWidth: 0.5 },
   }));
 
-  q2RegionalChart.setOption({
+  q2TimelineChart.setOption({
     backgroundColor: '#0f1117',
     animation: true,
-    animationDuration: 600,
+    animationDuration: 700,
     title: {
-      text: 'Avg Shelter Ratio by Planning Area — Top 15',
-      left: 'center',
-      top: 12,
-      textStyle: { fontSize: 14, fontWeight: 600, color: '#ccc' },
+      text: 'Covered Linkway per HDB & per 1,000 Residents — by HDB Era (Old → New)',
+      left: 16, top: 10,
+      textStyle: { fontSize: 13, fontWeight: 600, color: '#ddd' },
     },
-    grid: { left: 70, right: 30, top: 55, bottom: 80 },
     legend: {
-      data: TYPE_ORDER,
-      bottom: 10,
-      textStyle: { color: '#aaa', fontSize: 11 },
-      itemWidth: 12, itemHeight: 12,
+      data: ['Per HDB (m)', 'Per 1,000 residents (m)'],
+      right: '45%', top: 48,
+      padding: [0, 20, 0, 0],
+      textStyle: { color: '#ffffff', fontSize: 11, fontWeight: 500 },
+      icon: 'circle',
+      itemWidth: 10,
+      itemHeight: 10,
+      itemGap: 20,
     },
+    graphic: [{
+      type: 'group',
+      left: '55%',
+      top: 50,
+      children: [
+        { type: 'text', left: 20, top: 4, style: { text: 'HDB Era:', fill: '#ffffff', fontSize: 11, fontWeight: 500 } },
+        { type: 'text', left: 76, top: 5, style: { text: 'Old', fill: '#ffffff', fontSize: 10, fontWeight: 600 } },
+        { 
+          type: 'rect', 
+          left: 100, 
+          top: 6, 
+          shape: { width: 120, height: 8, r: 4 }, 
+          style: { 
+            fill: { 
+              type: 'linear', x: 0, y: 0, x2: 1, y2: 0, 
+              colorStops: [
+                {offset: 0, color: '#b71c1c'},
+                {offset: 0.48, color: '#ef9a9a'},
+                {offset: 0.52, color: '#a5d6a7'},
+                {offset: 1, color: '#1b5e20'}
+              ] 
+            },
+            shadowBlur: 4,
+            shadowColor: 'rgba(0,0,0,0.3)',
+            shadowOffsetY: 2
+          } 
+        },
+        { type: 'text', left: 226, top: 5, style: { text: 'New', fill: '#ffffff', fontSize: 10, fontWeight: 600 } },
+      ],
+    }],
+    grid: { left: 72, right: 80, top: 86, bottom: 82 },
     tooltip: {
       trigger: 'axis',
       axisPointer: { type: 'shadow' },
@@ -304,149 +348,134 @@ function renderQ2Regional() {
       borderColor: '#3a3f4a',
       textStyle: { color: '#e8eaed', fontSize: 12 },
       formatter: params => {
-        let html = `<b>${params[0].axisValue}</b><br>`;
-        params.forEach(p => {
-          if (p.value > 0) {
-            html += `<span style="color:${TYPE_COLORS[p.seriesName]};">●</span> ${p.seriesName}: <b>${p.value.toFixed(1)}%</b><br>`;
-          }
-        });
-        return html;
+        if (!params || !params.length) return '';
+        const idx = params[0].dataIndex;
+        const a = areas[idx];
+        const h = a.n_hdb_full || a.n_hdb_400m;
+        const l = a.lw_length_full || a.lw_length_m;
+        const p = a.total_pop || 0;
+        return `<b style="font-size:13px;">${fmtArea(a)}</b><br/>
+          <span style="color:#888;">Mean HDB year:</span> <b>${a.year_mean.toFixed(0)}</b><br/>
+          <span style="color:#888;">HDB blocks:</span> <b>${h}</b><br/>
+          <span style="color:#888;">Linkway:</span> <b>${(l/1000).toFixed(2)} km</b><br/>
+          <span style="color:#888;">Population:</span> <b>${p.toLocaleString()}</b><br/>
+          <span style="color:#888;">Per HDB:</span> <b style="color:#ffcc80;">${(l/h).toFixed(1)} m</b><br/>
+          <span style="color:#888;">Per 1,000 residents:</span> <b style="color:#fdd835;">${p > 0 ? (l/(p/1000)).toFixed(1) : '—'} m</b>`;
       },
     },
     xAxis: {
       type: 'category',
       data: categories,
-      axisLabel: { color: '#888', fontSize: 10, fontWeight: 600, interval: 0, rotate: 35 },
+      axisLabel: { color: '#aaa', fontSize: 9, interval: 0, rotate: 45 },
       axisLine: { lineStyle: { color: '#2a2f3a' } },
+      axisTick: { show: false },
     },
-    yAxis: {
-      name: 'Avg Shelter Ratio (%)',
-      nameLocation: 'middle',
-      nameGap: 48,
-      nameTextStyle: { fontSize: 12, color: '#888' },
-      type: 'value',
-      axisLabel: { formatter: v => v + '%', color: '#666', fontSize: 10 },
-      splitLine: { lineStyle: { color: '#1c2029' } },
-      axisLine: { lineStyle: { color: '#2a2f3a' } },
-    },
-    series,
+    yAxis: [
+      {
+        type: 'value',
+        name: 'Per HDB (m)',
+        nameLocation: 'middle',
+        nameGap: 50,
+        nameTextStyle: { fontSize: 11, color: '#888' },
+        axisLabel: { color: '#888', fontSize: 10 },
+        splitLine: { lineStyle: { color: '#1c2029' } },
+        axisLine: { show: false },
+      },
+      {
+        type: 'value',
+        name: 'Per 1,000 residents (m)',
+        nameLocation: 'middle',
+        nameGap: 50,
+        nameTextStyle: { fontSize: 11, color: '#fdd835' },
+        axisLabel: { color: '#fdd835', fontSize: 10 },
+        splitLine: { show: false },
+        axisLine: { show: false },
+      },
+    ],
+    series: [
+      {
+        name: 'Per HDB (m)',
+        type: 'bar',
+        barWidth: '62%',
+        data: barData,
+        yAxisIndex: 0,
+        emphasis: { itemStyle: { borderColor: '#fff', borderWidth: 2 } },
+      },
+      {
+        name: 'Per 1,000 residents (m)',
+        type: 'line',
+        data: perKArr,
+        yAxisIndex: 1,
+        smooth: false,
+        symbol: 'circle',
+        symbolSize: 6,
+        lineStyle: { color: '#fdd835', width: 2.2 },
+        itemStyle: { color: '#fdd835', borderColor: '#0f1117', borderWidth: 1.5 },
+      },
+    ],
   }, true);
-
-  // Click bar → open map for that area + type
-  q2RegionalChart.off('click');
-  q2RegionalChart.on('click', params => {
-    if (params.componentType !== 'series') return;
-    const areaIdx = params.dataIndex;
-    const type = params.seriesName;
-    if (areaIdx >= 0 && areaIdx < topAreas.length && type) {
-      openQ2Map(topAreas[areaIdx], type);
-    }
-  });
 }
 
 /* ═══════════════════════════════════════════════════════════════════
    SIDEBAR
    ═══════════════════════════════════════════════════════════════════ */
 function renderQ2Sidebar() {
-  const services = window.SERVICES;
-  if (!services || !services.length) return;
+  const chart1 = window.AREA_CHART1 || {};
+  const rows = Object.values(chart1).filter(b => b.n_hdb_400m >= 5 && b.lw_length_m > 0);
 
-  const total = services.length;
-  const avgRatio = mean(services.map(s => s.shelter_ratio)) * 100;
-  const underserved = services.filter(s => s.shelter_ratio < 0.10).length;
-
-  // Per-type stats
-  const typeStats = {};
-  TYPE_ORDER.forEach(t => {
-    const items = services.filter(s => s.type === t);
-    const ratios = items.map(s => s.shelter_ratio * 100);
-    typeStats[t] = {
-      count: items.length,
-      mean: ratios.length ? mean(ratios) : 0,
-      median: ratios.length ? median(ratios) : 0,
-      std: ratios.length ? std(ratios) : 0,
-    };
-  });
+  // Recompute Pearson r between 400m HDB count and 400m linkway length
+  const xs = rows.map(r => r.n_hdb_400m);
+  const ys = rows.map(r => r.lw_length_m);
+  const n = xs.length;
+  let r = 0;
+  if (n >= 2) {
+    const mx = xs.reduce((s, v) => s + v, 0) / n;
+    const my = ys.reduce((s, v) => s + v, 0) / n;
+    let num = 0, dx2 = 0, dy2 = 0;
+    for (let i = 0; i < n; i++) {
+      const dx = xs[i] - mx, dy = ys[i] - my;
+      num += dx * dy; dx2 += dx * dx; dy2 += dy * dy;
+    }
+    r = (dx2 === 0 || dy2 === 0) ? 0 : num / Math.sqrt(dx2 * dy2);
+  }
+  const rFmt = (r >= 0 ? '+' : '') + r.toFixed(2);
 
   document.getElementById('q2-sidebar-content').innerHTML = `
     <div class="stats-row">
-      <div class="stat-card"><div class="label">Services</div><div class="value" style="color:var(--accent);">${total.toLocaleString()}</div></div>
-      <div class="stat-card"><div class="label">Avg Shelter</div><div class="value" style="color:${avgRatio<15?'var(--orange)':'var(--green)'};">${avgRatio.toFixed(1)}%</div></div>
-      <div class="stat-card"><div class="label">Underserved</div><div class="value" style="color:var(--red);">${underserved}</div><div class="detail">ratio &lt; 10%</div></div>
-    </div>
-
-    <div class="view-tabs">
-      <button class="view-tab active" data-q2tab="overview" onclick="q2SwitchTab('overview')">Overview</button>
-      <button class="view-tab" data-q2tab="regional" onclick="q2SwitchTab('regional')">Regional</button>
-    </div>
-
-    <div id="q2-tab-overview">
-      <div class="narrative">
-        <div class="section-tag"><div class="dot" style="background:var(--accent);"></div>Per-Type Summary</div>
-        ${TYPE_ORDER.map(t => {
-          const s = typeStats[t];
-          const color = TYPE_COLORS[t];
-          return `<div style="margin-bottom:10px;">
-            <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color};margin-right:6px;vertical-align:middle;"></span>
-            <strong>${t}</strong> (n=${s.count})<br>
-            <span style="margin-left:16px;font-size:11px;color:var(--muted);">
-              Mean: <b style="color:var(--text);">${s.mean.toFixed(1)}%</b> &nbsp;|&nbsp;
-              Median: <b style="color:var(--text);">${s.median.toFixed(1)}%</b> &nbsp;|&nbsp;
-              Std: <b style="color:var(--text);">${s.std.toFixed(1)}%</b>
-            </span>
-          </div>`;
-        }).join('')}
+      <div class="stat-card">
+        <div class="label">Areas</div>
+        <div class="value" style="color:var(--accent);">${n}</div>
       </div>
-
-      <div class="narrative">
-        <div class="section-tag"><div class="dot" style="background:var(--yellow);"></div>Key Patterns</div>
-        <strong>Schools</strong> show the widest spread in shelter ratios — from near 0% to over 40%. This suggests highly uneven shelter investment across educational institutions, possibly driven by school age (newer schools benefit from updated building codes) and proximity to MRT stations.<br><br>
-        <strong>Healthcare</strong> facilities cluster at the low end, with most clinics and hospitals having minimal sheltered walkway connectivity. This is concerning given the vulnerability of patients and elderly visitors.<br><br>
-        <strong>HDB</strong> estates show moderate and relatively consistent shelter coverage, reflecting systematic government planning of covered linkways in public housing precincts.<br><br>
-        <strong>Commercial</strong> areas display a bimodal pattern — malls and integrated developments tend to have high shelter, while standalone commercial buildings often have very low coverage.
-      </div>
-
-      <div class="insight">
-        <strong>Key Finding:</strong> Schools and healthcare facilities — serving the most vulnerable populations (children and the sick/elderly) — do not consistently receive better shelter coverage than commercial areas. The mean shelter ratio for healthcare (${typeStats['Healthcare'].mean.toFixed(1)}%) is notably ${typeStats['Healthcare'].mean < typeStats['Commercial'].mean ? 'lower' : 'higher'} than commercial (${typeStats['Commercial'].mean.toFixed(1)}%), challenging the assumption that vulnerability drives shelter investment.
+      <div class="stat-card">
+        <div class="label">r (HDB vs linkway)</div>
+        <div class="value" style="color:var(--green);">${rFmt}</div>
       </div>
     </div>
 
-    <div id="q2-tab-regional" style="display:none;">
-      <div class="narrative">
-        <div class="section-tag"><div class="dot" style="background:#ffeb3b;"></div>Regional Disparities</div>
-        Shelter coverage varies dramatically across planning areas. Mature HDB towns like <strong>Tampines</strong>, <strong>Bedok</strong>, and <strong>Ang Mo Kio</strong> generally provide better sheltered connectivity to schools, while newer developments and CBD-adjacent areas lag behind.<br><br>
-        Healthcare facilities in <strong>central areas</strong> often have lower shelter ratios despite higher patient volumes, mirroring the demand-supply mismatch pattern observed in RQ1 for transit stations.
-      </div>
+    <div class="narrative">
+      <div class="section-tag"><div class="dot" style="background:#4fc3f7;"></div>Chart 1 — Volume correlation</div>
+      Scatter of residential HDB count vs covered linkway length, both within 400m of MRT/LRT stations.<br/>
+      <b style="color:var(--green);">r = ${rFmt}</b> — at the area level, linkway length scales with HDB count, so the allocation appears fair.
+    </div>
 
-      <div class="insight">
-        <strong>Geographic Equity:</strong> Planning areas with high concentrations of elderly residents do not systematically have better shelter coverage for healthcare facilities. This geographic mismatch suggests that shelter investment follows <em>building age and planning era</em> more than <em>demographic need</em>.
-      </div>
+    <div class="narrative">
+      <div class="section-tag"><div class="dot" style="background:#e53935;"></div>Chart 2 — Per HDB & per 1,000 residents</div>
+      Bars show linkway length per HDB block; the yellow line shows linkway length per 1,000 residents.
+      Areas sorted old → new. Old estates like Queenstown receive ~47 m per block; Punggol gets just ~8 m — a <strong>5–8× gap</strong>.
+    </div>
+
+    <div class="insight">
+      <strong>Q2 Finding:</strong> The positive correlation in Chart 1 looks equitable, but hides two things:
+      <strong>(1)</strong> population density — newer towns pack far more residents per block, so each person's share of covered linkway is even smaller;
+      <strong>(2)</strong> infrastructure lag — new HDB estates and their linkway networks have not yet caught up with established ones.
+      Per resident and per block, the newest BTO towns are systematically under-served in shelter from both rain and sun.
+    </div>
+
+    <div class="narrative" style="border-color:#4fc3f7;">
+      <div class="section-tag"><div class="dot" style="background:#4fc3f7;"></div>&rarr; Q3</div>
+      Who actually lives in these under-served new towns? Q3 brings in Singapore's 2025 census and reveals they are dominated by working-age commuters and young families — the very people who walk to MRT every day and need covered linkways the most.
     </div>
   `;
-}
-
-/* ═══════════════════════════════════════════════════════════════════
-   TAB SWITCHING
-   ═══════════════════════════════════════════════════════════════════ */
-function q2SwitchTab(tab) {
-  q2CurrentTab = tab;
-  document.querySelectorAll('[data-q2tab]').forEach(t => {
-    t.classList.toggle('active', t.dataset.q2tab === tab);
-  });
-  document.getElementById('q2-tab-overview').style.display = tab === 'overview' ? 'block' : 'none';
-  document.getElementById('q2-tab-regional').style.display = tab === 'regional' ? 'block' : 'none';
-
-  if (tab === 'overview') {
-    // Dispose regional chart if exists, re-init main
-    if (q2RegionalChart) { q2RegionalChart.dispose(); q2RegionalChart = null; }
-    q2Chart = null;
-    renderQ2Chart();
-  } else {
-    // Dispose main chart, render regional
-    if (q2Chart) { q2Chart.dispose(); q2Chart = null; }
-    q2RegionalChart = null;
-    renderQ2Regional();
-  }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -454,47 +483,34 @@ function q2SwitchTab(tab) {
    ═══════════════════════════════════════════════════════════════════ */
 function q2Init() {
   renderQ2Sidebar();
-  renderQ2Chart();
+  renderQ2HdbScatter();
+  renderQ2Timeline();
+  window.addEventListener('resize', () => {
+    if (q2Chart) q2Chart.resize();
+    if (q2TimelineChart) q2TimelineChart.resize();
+  });
 }
 
 function q2Show() {
-  if (q2CurrentTab === 'overview') {
-    if (q2Chart) q2Chart.resize(); else renderQ2Chart();
-  } else {
-    if (q2RegionalChart) q2RegionalChart.resize(); else renderQ2Regional();
-  }
+  if (q2Chart) setTimeout(() => q2Chart.resize(), 50);
+  if (q2TimelineChart) setTimeout(() => q2TimelineChart.resize(), 50);
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   Q2 MAP VIEW — Planning Area detail
+   Q2 MAP VIEW — 400m Walk-to-MRT zone per planning area
+   Shows: union of 400m buffers around every MRT/LRT station in the area,
+          plus every residential HDB, covered linkway, bridge, and footpath
+          that falls inside that union. Everything outside is hidden.
+   Intended visual effect mirrors the Q1 station click-through.
    ═══════════════════════════════════════════════════════════════════ */
 let q2Map = null;
-let q2MapCurrentType = 'School';
 let q2MapAreaName = '';
-let q2MapServices = [];
-let q2MapAreaFeature = null;
-let q2MapAreaBounds = null;
-let q2ZoomedService = null; // currently zoomed service name, null = overview
 
-async function openQ2Map(areaName, serviceType) {
-  const services = window.SERVICES.filter(s =>
-    s.planning_area.toLowerCase() === areaName.toLowerCase() &&
-    s.type === serviceType
-  );
-  if (!services.length) return;
+async function openQ2Map(areaName) {
+  const detail = window.AREA_CHART1_DETAIL && window.AREA_CHART1_DETAIL[areaName];
+  if (!detail) return;
 
-  q2MapCurrentType = serviceType;
   q2MapAreaName = areaName;
-  q2MapServices = services;
-  q2ZoomedService = null;
-
-  const regions = window.REGIONS;
-  q2MapAreaFeature = regions.features.find(f =>
-    (f.properties.PLN_AREA_N || '').toLowerCase() === areaName.toLowerCase()
-  );
-
-  // Load area infrastructure
-  await loadAreaInfra();
 
   document.getElementById('q2-chart-view').style.display = 'none';
   document.getElementById('q2-map-view').style.display = 'flex';
@@ -502,337 +518,99 @@ async function openQ2Map(areaName, serviceType) {
   const displayName = areaName.charAt(0) + areaName.slice(1).toLowerCase();
   document.getElementById('q2-map-area-name').textContent = displayName;
   document.getElementById('q2-map-area-sub').textContent =
-    `${services.length} ${serviceType} facilities · Shelter ratio analysis`;
+    `${detail.n_stations} MRT/LRT stations · ${detail.n_hdb_400m} residential HDB blocks within 400m`;
 
-  renderQ2MapSidebar(services, displayName, serviceType);
-  renderQ2MapLegend(serviceType, false);
-  setTimeout(() => initQ2Map(services, q2MapAreaFeature, areaName), 50);
+  renderQ2MapSidebar(detail, areaName, displayName);
+  renderQ2MapLegend();
+  setTimeout(() => initQ2Map(detail, areaName), 50);
 }
 
 function q2BackToChart() {
   document.getElementById('q2-map-view').style.display = 'none';
   document.getElementById('q2-chart-view').style.display = 'flex';
   if (q2Map) { q2Map.remove(); q2Map = null; }
-  q2ZoomedService = null;
-  if (q2CurrentTab === 'overview') {
-    if (q2Chart) q2Chart.resize(); else renderQ2Chart();
-  } else {
-    if (q2RegionalChart) q2RegionalChart.resize(); else renderQ2Regional();
-  }
+  if (q2Chart) q2Chart.resize(); else renderQ2HdbScatter();
+  if (q2TimelineChart) q2TimelineChart.resize(); else renderQ2Timeline();
 }
 
-function q2ToggleZoomService(serviceName) {
-  if (q2ZoomedService === serviceName) {
-    // Zoom back out to area
-    q2ZoomedService = null;
-    if (q2MapAreaBounds) q2Map.fitBounds(q2MapAreaBounds, { padding: 50 });
-    // Remove zoom layers
-    ['zoom-ring','zoom-poly','zoom-fp','zoom-cl','zoom-br','zoom-svc'].forEach(id => {
-      [id, id+'-line', id+'-fill'].forEach(lid => {
-        if (q2Map.getLayer(lid)) q2Map.removeLayer(lid);
-      });
-      if (q2Map.getSource(id)) q2Map.removeSource(id);
-    });
-    if (window._q2ZoomMarker) { window._q2ZoomMarker.remove(); window._q2ZoomMarker = null; }
-    // Restore all layer opacities
-    q2Map.setPaintProperty('services-dot', 'circle-opacity', 0.9);
-    q2Map.setPaintProperty('services-dot', 'circle-stroke-opacity', 1);
-    if (q2Map.getLayer('area-fp')) q2Map.setPaintProperty('area-fp', 'line-opacity', 0.3);
-    if (q2Map.getLayer('area-cl')) q2Map.setPaintProperty('area-cl', 'line-opacity', 0.5);
-    if (q2Map.getLayer('area-br')) q2Map.setPaintProperty('area-br', 'line-opacity', 0.5);
-    if (q2Map.getLayer('area-fill')) q2Map.setPaintProperty('area-fill', 'fill-opacity', 0.05);
-    if (q2Map.getLayer('area-line')) q2Map.setPaintProperty('area-line', 'line-opacity', 0.6);
-    renderQ2MapLegend(q2MapCurrentType, false);
-    document.querySelectorAll('.q2-svc-row').forEach(el => el.classList.remove('selected'));
-  } else {
-    // Zoom to this service
-    q2ZoomedService = serviceName;
-    const svc = q2MapServices.find(s => s.name === serviceName);
-    if (!svc) return;
-
-    // Remove previous zoom layers
-    ['zoom-ring','zoom-poly','zoom-fp','zoom-cl','zoom-br','zoom-svc'].forEach(id => {
-      [id, id+'-line', id+'-fill'].forEach(lid => {
-        if (q2Map.getLayer(lid)) q2Map.removeLayer(lid);
-      });
-      if (q2Map.getSource(id)) q2Map.removeSource(id);
-    });
-    // Remove previous HTML marker
-    if (window._q2ZoomMarker) { window._q2ZoomMarker.remove(); window._q2ZoomMarker = null; }
-
-    // Dim everything
-    q2Map.setPaintProperty('services-dot', 'circle-opacity', 0);
-    q2Map.setPaintProperty('services-dot', 'circle-stroke-opacity', 0);
-    if (q2Map.getLayer('area-fp')) q2Map.setPaintProperty('area-fp', 'line-opacity', 0.08);
-    if (q2Map.getLayer('area-cl')) q2Map.setPaintProperty('area-cl', 'line-opacity', 0.1);
-    if (q2Map.getLayer('area-br')) q2Map.setPaintProperty('area-br', 'line-opacity', 0.1);
-    if (q2Map.getLayer('area-fill')) q2Map.setPaintProperty('area-fill', 'fill-opacity', 0.02);
-    if (q2Map.getLayer('area-line')) q2Map.setPaintProperty('area-line', 'line-opacity', 0.15);
-
-    const lat = svc.lat, lng = svc.lng;
-    const svcColor = shelterColor(svc.shelter_ratio);
-    const infra = window.AREA_INFRA;
-    const polyKey = { School: '_school_polygons', Healthcare: '_health_polygons', HDB: '_hdb_polygons', Commercial: '_commercial_polygons' }[q2MapCurrentType] || '_school_polygons';
-    const allPolys = infra[polyKey] || {};
-    const polyMatch = Object.entries(allPolys).find(([k]) => k.startsWith(serviceName + '_'));
-    console.log('[Q2 zoom]', 'type:', q2MapCurrentType, 'polyKey:', polyKey, 'polyCount:', Object.keys(allPolys).length, 'name:', serviceName, 'match:', !!polyMatch);
-
-    // Compute minimum enclosing circle of polygon + 100m
-    let circleLat = lat, circleLng = lng, circleR = 200;
-    let polyCoords = null;
-    if (polyMatch) {
-      polyCoords = polyMatch[1];
-      // Find bounding circle: center = centroid, radius = max distance to any vertex
-      const cx = polyCoords.reduce((s,c) => s + c[0], 0) / polyCoords.length;
-      const cy = polyCoords.reduce((s,c) => s + c[1], 0) / polyCoords.length;
-      const cosLat = Math.cos(cy * Math.PI / 180);
-      let maxDist = 0;
-      polyCoords.forEach(c => {
-        const dx = (c[0] - cx) * 111320 * cosLat;
-        const dy = (c[1] - cy) * 111320;
-        const d = Math.sqrt(dx*dx + dy*dy);
-        if (d > maxDist) maxDist = d;
-      });
-      circleLat = cy; circleLng = cx;
-      circleR = Math.max(maxDist + 100, 200); // enclosing radius + 100m, min 200m
-    }
-
-    // Draw circle
-    const ringCoords = [];
-    for (let i = 0; i <= 64; i++) {
-      const a = (i / 64) * Math.PI * 2;
-      ringCoords.push([
-        circleLng + (circleR / (111320 * Math.cos(circleLat * Math.PI / 180))) * Math.sin(a),
-        circleLat + (circleR / 111320) * Math.cos(a)
-      ]);
-    }
-    q2Map.addSource('zoom-ring', { type: 'geojson', data: { type: 'Feature', geometry: { type: 'Polygon', coordinates: [ringCoords] } } });
-    q2Map.addLayer({ id: 'zoom-ring-fill', type: 'fill', source: 'zoom-ring', paint: { 'fill-color': svcColor, 'fill-opacity': 0.06 } }, 'services-dot');
-    q2Map.addLayer({ id: 'zoom-ring-line', type: 'line', source: 'zoom-ring', paint: { 'line-color': svcColor, 'line-width': 2, 'line-dasharray': [4, 4], 'line-opacity': 0.6 } }, 'services-dot');
-
-    // Draw building polygon
-    if (polyCoords) {
-      q2Map.addSource('zoom-poly', { type: 'geojson', data: { type: 'Feature', geometry: { type: 'Polygon', coordinates: [polyCoords] } } });
-      q2Map.addLayer({ id: 'zoom-poly-fill', type: 'fill', source: 'zoom-poly', paint: { 'fill-color': '#fff', 'fill-opacity': 0.1 } }, 'services-dot');
-      q2Map.addLayer({ id: 'zoom-poly-line', type: 'line', source: 'zoom-poly', paint: { 'line-color': '#fff', 'line-width': 2, 'line-opacity': 0.7 } }, 'services-dot');
-    }
-
-    // Draw only infrastructure INSIDE the circle (clipped to boundary)
-    const areaData = infra[q2MapAreaName.toUpperCase()] || infra[q2MapAreaName];
-    if (areaData) {
-      const cosL = Math.cos(circleLat * Math.PI / 180);
-      function distSq(c) {
-        const dx = (c[0] - circleLng) * 111320 * cosL;
-        const dy = (c[1] - circleLat) * 111320;
-        return dx * dx + dy * dy;
-      }
-      const rSq = circleR * circleR;
-      function isInCircle(c) { return distSq(c) <= rSq; }
-
-      // Clip a segment (array of [lng,lat]) to the circle, returning array of sub-segments
-      function clipSegmentToCircle(coords) {
-        const result = [];
-        let current = [];
-        for (let i = 0; i < coords.length - 1; i++) {
-          const a = coords[i], b = coords[i + 1];
-          const aIn = isInCircle(a), bIn = isInCircle(b);
-          if (aIn && bIn) {
-            if (!current.length) current.push(a);
-            current.push(b);
-          } else if (aIn && !bIn) {
-            if (!current.length) current.push(a);
-            current.push(intersectCircle(a, b));
-            if (current.length >= 2) result.push(current);
-            current = [];
-          } else if (!aIn && bIn) {
-            current.push(intersectCircle(a, b));
-            current.push(b);
-          } else {
-            // Both outside -- skip (ignoring through-circle edge case)
-          }
-        }
-        if (current.length >= 2) result.push(current);
-        return result;
-      }
-
-      // Find intersection of line segment a->b with circle boundary
-      function intersectCircle(a, b) {
-        const ax = (a[0] - circleLng) * 111320 * cosL;
-        const ay = (a[1] - circleLat) * 111320;
-        const bx = (b[0] - circleLng) * 111320 * cosL;
-        const by = (b[1] - circleLat) * 111320;
-        const dx = bx - ax, dy = by - ay;
-        const A = dx * dx + dy * dy;
-        const B = 2 * (ax * dx + ay * dy);
-        const C = ax * ax + ay * ay - rSq;
-        const disc = B * B - 4 * A * C;
-        const sqrtDisc = Math.sqrt(Math.max(0, disc));
-        const t1 = (-B - sqrtDisc) / (2 * A);
-        const t2 = (-B + sqrtDisc) / (2 * A);
-        // Pick the t in [0,1] closest to the inside point
-        const t = (t1 >= 0 && t1 <= 1) ? t1 : t2;
-        const tClamped = Math.max(0, Math.min(1, t));
-        return [
-          a[0] + tClamped * (b[0] - a[0]),
-          a[1] + tClamped * (b[1] - a[1])
-        ];
-      }
-
-      // Clip footpaths (plain coordinate arrays)
-      const clippedFp = [];
-      (areaData.footpaths || []).forEach(seg => {
-        clipSegmentToCircle(seg).forEach(s => clippedFp.push(s));
-      });
-      // Clip covered linkways / bridges (objects with {c, fs, td})
-      const clippedCl = [];
-      (areaData.covered_linkways || []).forEach(s => {
-        clipSegmentToCircle(s.c).forEach(c => clippedCl.push({ c, fs: s.fs, td: s.td }));
-      });
-      const clippedBr = [];
-      (areaData.overhead_bridges || []).forEach(s => {
-        clipSegmentToCircle(s.c).forEach(c => clippedBr.push({ c, fs: s.fs, td: s.td }));
-      });
-
-      if (clippedFp.length) {
-        const fpGeo = { type: 'FeatureCollection', features: clippedFp.map(coords => ({
-          type: 'Feature', geometry: { type: 'LineString', coordinates: coords }, properties: {}
-        })) };
-        q2Map.addSource('zoom-fp', { type: 'geojson', data: fpGeo });
-        q2Map.addLayer({ id: 'zoom-fp', type: 'line', source: 'zoom-fp', paint: { 'line-color': '#bbb', 'line-width': 3, 'line-opacity': 0.6 } }, 'services-dot');
-      }
-      if (clippedCl.length) {
-        const clGeo = { type: 'FeatureCollection', features: clippedCl.map(s => ({
-          type: 'Feature', geometry: { type: 'LineString', coordinates: s.c },
-          properties: { first_seen: s.fs || 'Unknown' }
-        })) };
-        q2Map.addSource('zoom-cl', { type: 'geojson', data: clGeo });
-        q2Map.addLayer({ id: 'zoom-cl', type: 'line', source: 'zoom-cl', paint: { 'line-color': '#4caf50', 'line-width': 4, 'line-opacity': 0.85 } }, 'services-dot');
-        const zClPopup = new maplibregl.Popup({ closeButton: false, closeOnClick: false });
-        q2Map.on('mouseenter', 'zoom-cl', e => {
-          q2Map.getCanvas().style.cursor = 'pointer';
-          const fs = e.features[0].properties.first_seen;
-          zClPopup.setLngLat(e.lngLat).setHTML(`<div style="font-size:12px;"><b style="color:#4caf50;">Covered Linkway</b><br>${fs <= '2019-01' ? 'Built before 2019' : 'First recorded: ' + fs}</div>`).addTo(q2Map);
-        });
-        q2Map.on('mousemove', 'zoom-cl', e => { zClPopup.setLngLat(e.lngLat); });
-        q2Map.on('mouseleave', 'zoom-cl', () => { q2Map.getCanvas().style.cursor = ''; zClPopup.remove(); });
-      }
-      if (clippedBr.length) {
-        const brGeo = { type: 'FeatureCollection', features: clippedBr.map(s => ({
-          type: 'Feature', geometry: { type: 'LineString', coordinates: s.c },
-          properties: { first_seen: s.fs || 'Unknown', type_desc: s.td || 'Overhead Bridge' }
-        })) };
-        q2Map.addSource('zoom-br', { type: 'geojson', data: brGeo });
-        q2Map.addLayer({ id: 'zoom-br', type: 'line', source: 'zoom-br', paint: { 'line-color': '#4caf50', 'line-width': 4, 'line-opacity': 0.85 } }, 'services-dot');
-        const zBrPopup = new maplibregl.Popup({ closeButton: false, closeOnClick: false });
-        q2Map.on('mouseenter', 'zoom-br', e => {
-          q2Map.getCanvas().style.cursor = 'pointer';
-          const p = e.features[0].properties;
-          zBrPopup.setLngLat(e.lngLat).setHTML(`<div style="font-size:12px;"><b style="color:#4caf50;">${p.type_desc}</b><br>${p.first_seen <= '2019-01' ? 'Built before 2019' : 'First recorded: ' + p.first_seen}</div>`).addTo(q2Map);
-        });
-        q2Map.on('mousemove', 'zoom-br', e => { zBrPopup.setLngLat(e.lngLat); });
-        q2Map.on('mouseleave', 'zoom-br', () => { q2Map.getCanvas().style.cursor = ''; zBrPopup.remove(); });
-      }
-    }
-
-    // Service point marker
-    q2Map.addSource('zoom-svc', { type: 'geojson', data: { type: 'Feature', geometry: { type: 'Point', coordinates: [lng, lat] }, properties: {} } });
-    q2Map.addLayer({ id: 'zoom-svc', type: 'circle', source: 'zoom-svc', paint: { 'circle-radius': 8, 'circle-color': svcColor, 'circle-stroke-width': 3, 'circle-stroke-color': '#fff' } });
-
-    // Service name label as HTML marker
-    const labelEl = document.createElement('div');
-    labelEl.style.cssText = 'font-size:13px;font-weight:700;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,0.9),0 0 8px rgba(0,0,0,0.7);white-space:nowrap;pointer-events:none;padding:2px 6px;';
-    labelEl.textContent = serviceName;
-    window._q2ZoomMarker = new maplibregl.Marker({ element: labelEl, anchor: 'bottom', offset: [0, -14] })
-      .setLngLat([lng, lat])
-      .addTo(q2Map);
-
-    // Zoom to circle
-    const bounds = new maplibregl.LngLatBounds();
-    ringCoords.forEach(c => bounds.extend(c));
-    q2Map.fitBounds(bounds, { padding: 60 });
-
-    renderQ2MapLegend(q2MapCurrentType, true);
-
-    // Highlight sidebar row + scroll into view
-    document.querySelectorAll('.q2-svc-row').forEach(el => {
-      const isMatch = el.dataset.name === serviceName;
-      el.classList.toggle('selected', isMatch);
-      if (isMatch) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    });
-  }
-}
-
-function renderQ2MapSidebar(services, areaName, serviceType) {
-  const ratios = services.map(s => s.shelter_ratio * 100);
-  const avg = mean(ratios);
-  const med = median(ratios);
-  const underserved = services.filter(s => s.shelter_ratio < 0.1).length;
-  const sorted = [...services].sort((a, b) => b.shelter_ratio - a.shelter_ratio);
+function renderQ2MapSidebar(detail, areaName, displayName) {
+  const chart1 = window.AREA_CHART1 && window.AREA_CHART1[areaName];
+  const lwLenKm = chart1 ? (chart1.lw_length_m / 1000) : 0;
+  const lwSegments = chart1 ? chart1.n_lw_400m : 0;
+  const nHdb = detail.n_hdb_400m;
+  const nStations = detail.n_stations;
 
   document.getElementById('q2-map-sidebar-content').innerHTML = `
     <div class="stats-row">
-      <div class="stat-card"><div class="label">${serviceType}s</div><div class="value" style="color:var(--accent);">${services.length}</div></div>
-      <div class="stat-card"><div class="label">Avg Shelter</div><div class="value" style="color:${avg<15?'var(--orange)':'var(--green)'};">${avg.toFixed(1)}%</div></div>
-      <div class="stat-card"><div class="label">Underserved</div><div class="value" style="color:var(--red);">${underserved}</div><div class="detail">ratio &lt; 10%</div></div>
+      <div class="stat-card">
+        <div class="label">Stations</div>
+        <div class="value" style="color:#ff5722;">${nStations}</div>
+        <div class="detail">MRT / LRT</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Residential HDB</div>
+        <div class="value" style="color:#26c6da;">${nHdb}</div>
+        <div class="detail">blocks in 400m</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Linkway</div>
+        <div class="value" style="color:#4caf50;">${lwLenKm.toFixed(1)}<span style="font-size:14px;">km</span></div>
+        <div class="detail">${lwSegments} segments</div>
+      </div>
     </div>
 
     <div class="narrative">
-      <div class="section-tag"><div class="dot" style="background:var(--accent);"></div>${areaName} — ${serviceType} Coverage</div>
-      Median shelter ratio is <strong>${med.toFixed(1)}%</strong>.
-      ${underserved > 0 ? `<strong>${underserved}</strong> of ${services.length} facilities have coverage below 10%.` : 'All facilities have at least 10% coverage.'}
-      <br><span style="color:var(--muted);font-size:10px;">Click a facility below to zoom in and see surrounding shelter infrastructure.</span>
+      <div class="section-tag"><div class="dot" style="background:var(--accent);"></div>${displayName} — 400m walk-to-MRT zone</div>
+      The shaded region is the union of 400m buffers around every MRT/LRT station in ${displayName}.
+      Every residential HDB block (cyan dot), covered linkway (green), overhead bridge (green),
+      and footpath (grey) shown here lies inside that zone. Nothing outside the buffer is drawn.
     </div>
 
-    <div class="score-section">
-      <div class="title">All ${serviceType} Facilities (click to zoom)</div>
-      ${sorted.map(s => {
-        const color = shelterColor(s.shelter_ratio);
-        const esc = s.name.replace(/'/g, "\\'");
-        return `<div class="metric-row q2-svc-row" data-name="${s.name}" style="cursor:pointer;" onclick="q2ToggleZoomService('${esc}')">
-          <span style="color:${color};font-size:14px;margin-right:6px;">●</span>
-          <span class="metric-label" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.name}</span>
-          <span class="metric-value" style="color:${color};">${(s.shelter_ratio * 100).toFixed(1)}%</span>
-        </div>`;
-      }).join('')}
+    <div class="narrative" style="border-color:#4fc3f7;">
+      <div class="section-tag"><div class="dot" style="background:#4fc3f7;"></div>How to read</div>
+      Hover a linkway to see when it was first recorded.
+      Hover an HDB dot to see its block number and completion year.
     </div>
   `;
 }
 
-function renderQ2MapLegend(serviceType, isZoomed) {
+function renderQ2MapLegend() {
   document.getElementById('q2-map-legend').innerHTML = `
     <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:700;margin-bottom:8px;">Legend</div>
-    <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-      <span style="color:#ef5350;">Low</span>
-      <div style="width:60px;height:6px;border-radius:3px;background:linear-gradient(to right,#ef5350,#ff9800,#ffeb3b,#4caf50);"></div>
-      <span style="color:#4caf50;">High</span>
-      <span style="color:var(--muted);font-size:9px;margin-left:4px;">Shelter</span>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+      <div style="width:14px;height:10px;border:1.5px solid #8a8f9a;background:rgba(136,136,136,0.08);box-sizing:border-box;"></div>
+      <span>Planning area boundary</span>
     </div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-      <div style="width:10px;height:10px;border-radius:50%;background:#888;border:2px solid #fff;"></div>
-      <span>${serviceType} facility</span>
+      <div style="width:14px;height:14px;border-radius:50%;border:2px dashed #4fc3f7;background:rgba(79,195,247,0.10);box-sizing:border-box;"></div>
+      <span>400m MRT/LRT buffer</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+      <div style="width:10px;height:10px;border-radius:50%;background:#ff5722;border:2px solid #fff;"></div>
+      <span>MRT / LRT station</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+      <div style="width:10px;height:10px;border-radius:50%;background:#26c6da;border:1.5px solid #fff;"></div>
+      <span>Residential HDB</span>
     </div>
     <div style="height:1px;background:var(--border);margin:6px 0;"></div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-      <div style="width:18px;height:2px;background:#bbb;border-radius:1px;"></div> <span>Footpath</span>
+      <div style="width:18px;height:2px;background:#bbb;border-radius:1px;"></div>
+      <span>Footpath</span>
     </div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-      <div style="width:18px;height:3px;background:#4caf50;border-radius:2px;"></div> <span>Covered Linkway</span>
+      <div style="width:18px;height:3px;background:#4caf50;border-radius:2px;"></div>
+      <span>Covered Linkway / Bridge</span>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-      <div style="width:18px;height:3px;background:#4caf50;border-radius:2px;"></div> <span>Overhead Bridge</span>
-    </div>
-    ${isZoomed ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-      <div style="width:14px;height:14px;border:2px solid #fff;border-radius:3px;box-sizing:border-box;"></div> <span>Building</span>
-    </div>` : ''}
   `;
 }
 
-function initQ2Map(services, areaFeature, areaName) {
+function initQ2Map(detail, areaName) {
   if (q2Map) { q2Map.remove(); q2Map = null; }
 
-  const lats = services.map(s => s.lat), lngs = services.map(s => s.lng);
-  const centerLat = (Math.min(...lats) + Math.max(...lats)) / 2;
-  const centerLng = (Math.min(...lngs) + Math.max(...lngs)) / 2;
+  const bbox = detail.buffer_bbox; // [minLng, minLat, maxLng, maxLat]
+  const centerLng = (bbox[0] + bbox[2]) / 2;
+  const centerLat = (bbox[1] + bbox[3]) / 2;
 
   q2Map = new maplibregl.Map({
     container: 'q2-map',
@@ -844,104 +622,143 @@ function initQ2Map(services, areaFeature, areaName) {
   });
 
   function onReady() { try {
-    // Area boundary
+    // ── 0. Planning area boundary ───────────────────────────────────
+    const regions = window.REGIONS;
+    const areaFeature = regions && regions.features.find(f =>
+      (f.properties.PLN_AREA_N || '').toUpperCase() === areaName.toUpperCase()
+    );
     if (areaFeature) {
       q2Map.addSource('area-boundary', { type: 'geojson', data: areaFeature });
-      q2Map.addLayer({ id: 'area-fill', type: 'fill', source: 'area-boundary', paint: { 'fill-color': '#4fc3f7', 'fill-opacity': 0.05 } });
-      q2Map.addLayer({ id: 'area-line', type: 'line', source: 'area-boundary', paint: { 'line-color': '#4fc3f7', 'line-width': 2, 'line-dasharray': [4, 4], 'line-opacity': 0.6 } });
+      q2Map.addLayer({
+        id: 'area-fill', type: 'fill', source: 'area-boundary',
+        paint: { 'fill-color': '#888', 'fill-opacity': 0.04 }
+      });
+      q2Map.addLayer({
+        id: 'area-line', type: 'line', source: 'area-boundary',
+        paint: { 'line-color': '#8a8f9a', 'line-width': 1.8, 'line-opacity': 0.7 }
+      });
     }
 
-    // Area infrastructure (footpath + covered linkway + bridge)
-    // New format: footpaths = [[coords]], covered/bridges = [{c: coords, fs: first_seen, td: type_desc}]
-    const infra = window.AREA_INFRA;
-    const areaData = infra ? (infra[areaName.toUpperCase()] || infra[areaName]) : null;
-    if (areaData) {
-      // Footpaths (plain coord arrays)
-      if (areaData.footpaths && areaData.footpaths.length) {
-        const fpGeo = { type: 'FeatureCollection', features: areaData.footpaths.map(coords => ({
-          type: 'Feature', geometry: { type: 'LineString', coordinates: coords }, properties: {}
-        })) };
-        q2Map.addSource('area-fp', { type: 'geojson', data: fpGeo });
-        q2Map.addLayer({ id: 'area-fp', type: 'line', source: 'area-fp', paint: { 'line-color': '#bbb', 'line-width': 1.5, 'line-opacity': 0.3 } });
-      }
-      // Covered linkways (with first_seen)
-      if (areaData.covered_linkways && areaData.covered_linkways.length) {
-        const clGeo = { type: 'FeatureCollection', features: areaData.covered_linkways.map(s => ({
-          type: 'Feature', geometry: { type: 'LineString', coordinates: s.c }, properties: { first_seen: s.fs || 'Unknown' }
-        })) };
-        q2Map.addSource('area-cl', { type: 'geojson', data: clGeo });
-        q2Map.addLayer({ id: 'area-cl', type: 'line', source: 'area-cl', paint: { 'line-color': '#4caf50', 'line-width': 2.5, 'line-opacity': 0.5 } });
-        // Hover
-        const clPopup = new maplibregl.Popup({ closeButton: false, closeOnClick: false });
-        q2Map.on('mouseenter', 'area-cl', e => {
-          q2Map.getCanvas().style.cursor = 'pointer';
-          const fs = e.features[0].properties.first_seen;
-          clPopup.setLngLat(e.lngLat).setHTML(`<div style="font-size:12px;"><b style="color:#4caf50;">Covered Linkway</b><br>${fs <= '2019-01' ? 'Built before 2019' : 'First recorded: ' + fs}</div>`).addTo(q2Map);
-        });
-        q2Map.on('mousemove', 'area-cl', e => { clPopup.setLngLat(e.lngLat); });
-        q2Map.on('mouseleave', 'area-cl', () => { q2Map.getCanvas().style.cursor = ''; clPopup.remove(); });
-      }
-      // Bridges (with first_seen + type)
-      if (areaData.overhead_bridges && areaData.overhead_bridges.length) {
-        const brGeo = { type: 'FeatureCollection', features: areaData.overhead_bridges.map(s => ({
-          type: 'Feature', geometry: { type: 'LineString', coordinates: s.c }, properties: { first_seen: s.fs || 'Unknown', type_desc: s.td || 'Overhead Bridge' }
-        })) };
-        q2Map.addSource('area-br', { type: 'geojson', data: brGeo });
-        q2Map.addLayer({ id: 'area-br', type: 'line', source: 'area-br', paint: { 'line-color': '#4caf50', 'line-width': 2.5, 'line-opacity': 0.5 } });
-        const brPopup = new maplibregl.Popup({ closeButton: false, closeOnClick: false });
-        q2Map.on('mouseenter', 'area-br', e => {
-          q2Map.getCanvas().style.cursor = 'pointer';
-          const p = e.features[0].properties;
-          brPopup.setLngLat(e.lngLat).setHTML(`<div style="font-size:12px;"><b style="color:#4caf50;">${p.type_desc}</b><br>${p.first_seen <= '2019-01' ? 'Built before 2019' : 'First recorded: ' + p.first_seen}</div>`).addTo(q2Map);
-        });
-        q2Map.on('mousemove', 'area-br', e => { brPopup.setLngLat(e.lngLat); });
-        q2Map.on('mouseleave', 'area-br', () => { q2Map.getCanvas().style.cursor = ''; brPopup.remove(); });
-      }
-    }
-
-    // Service dots
-    const geojson = { type: 'FeatureCollection', features: services.map(s => ({
-      type: 'Feature', geometry: { type: 'Point', coordinates: [s.lng, s.lat] },
-      properties: { name: s.name, shelter_ratio: s.shelter_ratio, color: shelterColor(s.shelter_ratio) }
-    })) };
-    q2Map.addSource('services', { type: 'geojson', data: geojson });
-    q2Map.addLayer({ id: 'services-dot', type: 'circle', source: 'services',
-      paint: { 'circle-radius': 7, 'circle-color': ['get', 'color'], 'circle-stroke-width': 2, 'circle-stroke-color': '#fff', 'circle-opacity': 0.9 }
+    // ── 1. Buffer union polygon ─────────────────────────────────────
+    q2Map.addSource('buffer', {
+      type: 'geojson',
+      data: { type: 'Feature', geometry: detail.buffer_geom, properties: {} }
+    });
+    q2Map.addLayer({
+      id: 'buffer-fill', type: 'fill', source: 'buffer',
+      paint: { 'fill-color': '#4fc3f7', 'fill-opacity': 0.08 }
+    });
+    q2Map.addLayer({
+      id: 'buffer-line', type: 'line', source: 'buffer',
+      paint: { 'line-color': '#4fc3f7', 'line-width': 2, 'line-dasharray': [4, 4], 'line-opacity': 0.6 }
     });
 
-    // Hover popup
-    const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false });
-    q2Map.on('mouseenter', 'services-dot', e => {
+    const stations = detail.stations || [];
+
+    // ── 2. Footpaths (LineString, pre-filtered server-side) ───────
+    const footpaths = detail.footpaths || [];
+    if (footpaths.length) {
+      const fpGeo = { type: 'FeatureCollection', features: footpaths.map(coords => ({
+        type: 'Feature', geometry: { type: 'LineString', coordinates: coords }, properties: {}
+      })) };
+      q2Map.addSource('area-fp', { type: 'geojson', data: fpGeo });
+      q2Map.addLayer({ id: 'area-fp', type: 'line', source: 'area-fp',
+        paint: { 'line-color': '#bbb', 'line-width': 1.5, 'line-opacity': 0.5 } });
+    }
+
+    // ── 3. Covered linkways (Polygon rings, pre-filtered) ─────────
+    const linkways = detail.linkways || [];
+    if (linkways.length) {
+      const clGeo = { type: 'FeatureCollection', features: linkways.map(ring => ({
+        type: 'Feature',
+        geometry: { type: 'Polygon', coordinates: [ring] },
+        properties: {}
+      })) };
+      q2Map.addSource('area-cl', { type: 'geojson', data: clGeo });
+      q2Map.addLayer({
+        id: 'area-cl-fill', type: 'fill', source: 'area-cl',
+        paint: { 'fill-color': '#4caf50', 'fill-opacity': 0.75 }
+      });
+      q2Map.addLayer({
+        id: 'area-cl-line', type: 'line', source: 'area-cl',
+        paint: { 'line-color': '#4caf50', 'line-width': 1.2, 'line-opacity': 0.95 }
+      });
+      const clPopup = new maplibregl.Popup({ closeButton: false, closeOnClick: false });
+      q2Map.on('mouseenter', 'area-cl-fill', e => {
+        q2Map.getCanvas().style.cursor = 'pointer';
+        clPopup.setLngLat(e.lngLat)
+          .setHTML(`<div style="font-size:12px;"><b style="color:#4caf50;">Covered Linkway</b></div>`)
+          .addTo(q2Map);
+      });
+      q2Map.on('mousemove', 'area-cl-fill', e => { clPopup.setLngLat(e.lngLat); });
+      q2Map.on('mouseleave', 'area-cl-fill', () => { q2Map.getCanvas().style.cursor = ''; clPopup.remove(); });
+    }
+
+    // ── 4. Overhead bridges (Polygon rings, pre-filtered) ─────────
+    const bridges = detail.bridges || [];
+    if (bridges.length) {
+      const brGeo = { type: 'FeatureCollection', features: bridges.map(ring => ({
+        type: 'Feature',
+        geometry: { type: 'Polygon', coordinates: [ring] },
+        properties: {}
+      })) };
+      q2Map.addSource('area-br', { type: 'geojson', data: brGeo });
+      q2Map.addLayer({
+        id: 'area-br-fill', type: 'fill', source: 'area-br',
+        paint: { 'fill-color': '#4caf50', 'fill-opacity': 0.75 }
+      });
+      q2Map.addLayer({
+        id: 'area-br-line', type: 'line', source: 'area-br',
+        paint: { 'line-color': '#4caf50', 'line-width': 1.2, 'line-opacity': 0.95 }
+      });
+    }
+
+    // ── 5. HDB points (already filtered server-side) ───────────────
+    const hdbFeatures = (detail.hdb || []).map(h => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [h.lng, h.lat] },
+      properties: { blk: h.blk, year: h.year }
+    }));
+    q2Map.addSource('hdb', { type: 'geojson', data: { type: 'FeatureCollection', features: hdbFeatures } });
+    q2Map.addLayer({
+      id: 'hdb-dot', type: 'circle', source: 'hdb',
+      paint: { 'circle-radius': 5, 'circle-color': '#26c6da', 'circle-stroke-width': 1.5, 'circle-stroke-color': '#fff', 'circle-opacity': 0.85 }
+    });
+    const hdbPopup = new maplibregl.Popup({ closeButton: false, closeOnClick: false });
+    q2Map.on('mouseenter', 'hdb-dot', e => {
       q2Map.getCanvas().style.cursor = 'pointer';
       const p = e.features[0].properties;
-      popup.setLngLat(e.lngLat)
-        .setHTML(`<div style="font-size:12px;"><b>${p.name}</b><br>Shelter: <b style="color:${p.color};">${(p.shelter_ratio * 100).toFixed(1)}%</b></div>`)
-        .addTo(q2Map);
+      hdbPopup.setLngLat(e.lngLat).setHTML(`<div style="font-size:12px;"><b style="color:#26c6da;">HDB Block ${p.blk}</b><br>Built: <b>${p.year}</b></div>`).addTo(q2Map);
     });
-    q2Map.on('mousemove', 'services-dot', e => { popup.setLngLat(e.lngLat); });
-    q2Map.on('mouseleave', 'services-dot', () => { q2Map.getCanvas().style.cursor = ''; popup.remove(); });
+    q2Map.on('mousemove', 'hdb-dot', e => { hdbPopup.setLngLat(e.lngLat); });
+    q2Map.on('mouseleave', 'hdb-dot', () => { q2Map.getCanvas().style.cursor = ''; hdbPopup.remove(); });
 
-    // Click dot to toggle zoom
-    q2Map.on('click', 'services-dot', e => {
-      const name = e.features[0].properties.name;
-      popup.remove();
-      q2ToggleZoomService(name);
+    // ── 6. Station markers + labels ────────────────────────────────
+    const staFeatures = stations.map(s => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [s.lng, s.lat] },
+      properties: { name: shortName(s.name) }
+    }));
+    q2Map.addSource('stations-pt', { type: 'geojson', data: { type: 'FeatureCollection', features: staFeatures } });
+    q2Map.addLayer({
+      id: 'stations-pt', type: 'circle', source: 'stations-pt',
+      paint: { 'circle-radius': 7, 'circle-color': '#ff5722', 'circle-stroke-width': 2.5, 'circle-stroke-color': '#fff' }
+    });
+    stations.forEach(s => {
+      const el = document.createElement('div');
+      el.style.cssText = 'color:#fff;font-size:11px;font-weight:700;text-shadow:0 0 4px #000,0 0 8px #000;pointer-events:none;white-space:nowrap;transform:translate(-50%,-100%);margin-top:-12px;';
+      el.textContent = shortName(s.name);
+      new maplibregl.Marker({ element: el }).setLngLat([s.lng, s.lat]).addTo(q2Map);
     });
 
-    // Fit to area
-    if (areaFeature) {
-      const coords = areaFeature.geometry.type === 'MultiPolygon'
-        ? areaFeature.geometry.coordinates.flat(2) : areaFeature.geometry.coordinates.flat(1);
-      q2MapAreaBounds = new maplibregl.LngLatBounds();
-      coords.forEach(c => q2MapAreaBounds.extend(c));
-      q2Map.fitBounds(q2MapAreaBounds, { padding: 50 });
-    } else {
-      q2MapAreaBounds = new maplibregl.LngLatBounds();
-      services.forEach(s => q2MapAreaBounds.extend([s.lng, s.lat]));
-      q2Map.fitBounds(q2MapAreaBounds, { padding: 50 });
-    }
-  } catch(err) { console.error('Q2 map error:', err); } }
+    // ── 7. Fit to buffer bbox ──────────────────────────────────────
+    const bounds = new maplibregl.LngLatBounds([bbox[0], bbox[1]], [bbox[2], bbox[3]]);
+    q2Map.fitBounds(bounds, { padding: 50 });
+  } catch (err) { console.error('Q2 map error:', err); } }
 
   if (q2Map.loaded()) onReady();
   else q2Map.on('load', onReady);
 }
+
+/* Legacy no-op kept for backward-compat with any lingering onclick handlers */
+function q2ToggleZoomService() {}
