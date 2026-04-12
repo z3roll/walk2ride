@@ -32,13 +32,24 @@
 
   /* ══════════ CHART VIEW (Q1) ══════════ */
   #chart-view { flex-direction: row; }
-  #chart-area { flex: 1; display: flex; flex-direction: column; }
-  #chart { flex: 1; cursor: pointer; }
+  #chart-area { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  #chart { flex: 1.2; cursor: pointer; min-height: 0; }
+  #chart-corr-wrap {
+    flex: 1;
+    min-height: 0;
+    border-top: 1px solid var(--border);
+    background: #0f1117;
+    display: flex;
+    flex-direction: column;
+  }
+  #chart-corr { flex: 1; min-height: 0; }
   #legend-bar {
     height: 48px; background: var(--panel); border-top: 1px solid var(--border);
     display: flex; align-items: center; justify-content: center; gap: 32px;
     font-size: 13px; color: var(--muted); flex-shrink: 0;
   }
+
+
   .legend-item { display: flex; align-items: center; gap: 6px; }
   .legend-gradient { width: 120px; height: 10px; border-radius: 5px; background: linear-gradient(to right, #4caf50, #ffeb3b, #ff9800, #ef5350); }
   .legend-size-dots { display: flex; align-items: center; gap: 4px; }
@@ -157,8 +168,35 @@
 
   /* ══════════ Q2 VIEW ══════════ */
   #q2-content { flex-direction: row; }
-  #q2-chart-area { flex: 1; display: flex; flex-direction: column; }
-  #q2-chart { flex: 1; }
+  #q2-chart-area { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  #q2-chart { flex: 1; min-height: 0; }
+  #q2-chart-timeline-wrap {
+    flex: 1;
+    min-height: 0;
+    border-top: 1px solid var(--border);
+    background: #0f1117;
+    display: flex;
+    flex-direction: column;
+  }
+  #q2-chart-timeline { flex: 1; min-height: 0; }
+
+  /* ══════════ Q3 VIEW ══════════ */
+  #q3-chart-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    background: #0f1117;
+  }
+  #q3-chart1 { flex: 1; min-height: 0; }
+  #q3-chart2-wrap {
+    flex: 1;
+    min-height: 0;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+  }
+  #q3-chart2 { flex: 1; min-height: 0; }
   #q2-sidebar {
     width: 380px; min-width: 340px; background: var(--panel);
     border-left: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden;
@@ -178,6 +216,18 @@
     width: 3px; height: 32px; border-radius: 2px; background: var(--border); transition: background 0.15s;
   }
   .resize-handle:hover::after, .resize-handle.dragging::after { background: var(--accent); }
+
+  /* ── Resizable horizontal handle ── */
+  .resize-handle-h {
+    height: 5px; cursor: row-resize; background: transparent; flex-shrink: 0;
+    position: relative; z-index: 10; transition: background 0.15s;
+  }
+  .resize-handle-h:hover, .resize-handle-h.dragging { background: var(--accent); }
+  .resize-handle-h::after {
+    content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 32px; height: 3px; border-radius: 2px; background: var(--border); transition: background 0.15s;
+  }
+  .resize-handle-h:hover::after, .resize-handle-h.dragging::after { background: var(--accent); }
 
   ::-webkit-scrollbar { width: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }

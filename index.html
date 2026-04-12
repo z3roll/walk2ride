@@ -3,19 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sheltered Walkway Analysis — Singapore</title>
+<title>Covered Linkway Analysis — Singapore</title>
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/style.css?v=7">
 </head>
 <body style="display:flex;flex-direction:column;">
 
 <!-- ══════════ TOP NAV BAR ══════════ -->
 <div id="nav-bar">
-  <button class="nav-tab active" data-rq="q1" onclick="switchRQ('q1')">RQ1: Demand-Supply Mismatch</button>
-  <button class="nav-tab" data-rq="q2" onclick="switchRQ('q2')">RQ2: Service Connectivity</button>
-  <button class="nav-tab" data-rq="q3" onclick="switchRQ('q3')">RQ3: Vulnerable Populations</button>
+  <button class="nav-tab active" data-rq="q1" onclick="switchRQ('q1')">Q1: What drives linkway coverage?</button>
+  <button class="nav-tab" data-rq="q2" onclick="switchRQ('q2')">Q2: Does every HDB area get equal shelter?</button>
+  <button class="nav-tab" data-rq="q3" onclick="switchRQ('q3')">Q3: Who benefits from linkway coverage?</button>
 </div>
 
 <!-- ══════════ CONTENT AREA ══════════ -->
@@ -55,12 +55,15 @@
             <span id="filter-count" style="color:#666;"></span>
           </div>
         </div>
+        <div id="chart-corr-wrap">
+          <div id="chart-corr"></div>
+        </div>
       </div>
       <div class="resize-handle" data-target="sidebar"></div>
       <div id="sidebar">
         <div class="sidebar-header">
-          <h1>RQ1: Demand–Supply Mismatch<br>in Sheltered Walkway Coverage</h1>
-          <div class="sub">Does shelter coverage align with commuter demand and rainfall exposure?</div>
+          <h1>Q1: What drives linkway coverage?</h1>
+          <div class="sub">Does shelter coverage align with ridership, rainfall, nearby facilities, or something else entirely?</div>
         </div>
         <div class="sidebar-scroll" id="sidebar-content"></div>
       </div>
@@ -91,12 +94,16 @@
     <div id="q2-chart-view" style="display:flex;flex-direction:row;width:100%;height:100%;">
       <div id="q2-chart-area">
         <div id="q2-chart"></div>
+        <div class="resize-handle-h"></div>
+        <div id="q2-chart-timeline-wrap">
+          <div id="q2-chart-timeline"></div>
+        </div>
       </div>
       <div class="resize-handle" data-target="q2-sidebar"></div>
       <div id="q2-sidebar">
         <div class="q2-sidebar-header">
-          <h1>RQ2: Service Connectivity<br>& Shelter Coverage</h1>
-          <div class="sub">How does shelter ratio vary across service types and planning areas?</div>
+          <h1>Q2: Does every HDB area get equal shelter?</h1>
+          <div class="sub">Do newer HDB estates receive the same linkway coverage as older ones?</div>
         </div>
         <div class="sidebar-scroll" id="q2-sidebar-content"></div>
       </div>
@@ -122,15 +129,18 @@
   <!-- ════════ RQ3 ════════ -->
   <div id="q3" class="rq-content">
     <div id="q3-main-view" style="display:flex;flex-direction:row;width:100%;height:100%;">
-      <div id="q3-map-container" style="flex:1;position:relative;">
-        <div id="q3-map" style="width:100%;height:100%;"></div>
-        <div id="q3-map-legend" style="position:absolute;bottom:20px;left:16px;z-index:10;background:rgba(24,27,34,0.92);border:1px solid var(--border);border-radius:10px;padding:14px 18px;font-size:11px;color:var(--text);box-shadow:0 4px 20px rgba(0,0,0,0.5);min-width:200px;"></div>
+      <div id="q3-chart-area">
+        <div id="q3-chart1"></div>
+        <div class="resize-handle-h"></div>
+        <div id="q3-chart2-wrap">
+          <div id="q3-chart2"></div>
+        </div>
       </div>
       <div class="resize-handle" data-target="q3-sidebar"></div>
       <div id="q3-sidebar" style="width:380px;min-width:340px;background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;">
         <div class="sidebar-header">
-          <h1>RQ3: Vulnerable Populations<br>& Shelter Coverage</h1>
-          <div class="sub">Which regions have more vulnerable population while remaining underserved in sheltered coverage?</div>
+          <h1>Q3: Who benefits from linkway coverage?</h1>
+          <div class="sub">Covered linkways provide shelter from both rain and sun — but not everyone benefits equally.</div>
         </div>
         <div class="sidebar-scroll" id="q3-sidebar-content"></div>
       </div>
@@ -140,10 +150,10 @@
 </div>
 
 <!-- ══════════ JS MODULES ══════════ -->
-<script src="js/common.js"></script>
-<script src="js/q1.js"></script>
-<script src="js/q2.js"></script>
-<script src="js/q3.js"></script>
+<script src="js/common.js?v=21"></script>
+<script src="js/q1.js?v=21"></script>
+<script src="js/q2.js?v=21"></script>
+<script src="js/q3.js?v=21"></script>
 <script>
 /* ── Navigation ── */
 let activeRQ = 'q1';
