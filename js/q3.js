@@ -295,9 +295,11 @@ function renderQ3CommuterRose() {
   el.appendChild(container);
 
   const maxLw = Math.max(...displayAreas.map(a => a.lw_per_1k)) || 4.7;
-  const maxCommuters = Math.max(...displayAreas.map(a => a.commuters));
-  const MAX_ICONS = 150; // cap the icons for the largest group
   const fmtArea = name => name.charAt(0) + name.slice(1).toLowerCase();
+
+  // Old estates (index 0) gets a reduced base; others scale proportionally by commuter count
+  const OLD_BASE_ICONS = 50;
+  const oldCommuters = displayAreas[0].commuters;
 
   displayAreas.forEach((a, index) => {
     const personColor = a._color;
@@ -343,16 +345,17 @@ function renderQ3CommuterRose() {
     `;
     viz.insertAdjacentHTML('beforeend', umbrellaHtml);
 
-    // Number of people to draw = thousands of commuters (1 icon = 1000 people)
-    // Scale icons proportionally — max area gets MAX_ICONS, others get less
-    const numIcons = Math.max(1, Math.round((a.commuters / maxCommuters) * MAX_ICONS));
+    // Old estates = OLD_BASE_ICONS; others scale proportionally by commuter ratio
+    const numIcons = index === 0
+      ? OLD_BASE_ICONS
+      : Math.max(1, Math.round(OLD_BASE_ICONS * (a.commuters / oldCommuters)));
 
     const grid = document.createElement('div');
     grid.style.display = 'flex';
     grid.style.flexWrap = 'wrap';
     grid.style.alignContent = 'flex-start';
     grid.style.justifyContent = 'center';
-    grid.style.gap = '2px';
+    grid.style.gap = '1px';
     grid.style.width = '100%';
     grid.style.flex = '1';
     grid.style.position = 'relative';
@@ -360,7 +363,7 @@ function renderQ3CommuterRose() {
     grid.style.overflow = 'hidden';
 
     const personSvg = `
-      <svg viewBox="0 0 24 24" fill="${personColor}" style="width: 12px; height: 16px; opacity: 0.9;">
+      <svg viewBox="0 0 24 24" fill="${personColor}" style="width: 9px; height: 12px; opacity: 0.9;">
         <circle cx="12" cy="5" r="4"></circle>
         <path d="M12 10c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4z"></path>
       </svg>
