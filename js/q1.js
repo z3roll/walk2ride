@@ -2,7 +2,7 @@
    Q1 — Scatter chart + Map view (demand-supply mismatch)
    ═══════════════════════════════════════════════════════════════════ */
 
-let chart = null, map = null;
+let chart = null, corrChart = null, map = null;
 let filterMin = 0, filterMax = 1;
 let currentHighlight = null;
 
@@ -59,9 +59,10 @@ function renderChart(highlightGroup) {
     grid: { left: 70, right: 40, top: 50, bottom: 60 },
     title: {
       text: highlightGroup
-        ? {well_served:'Case A: Well-Served Stations', high_mismatch:'Case B: High Mismatch Stations', over_provisioned:'Case C: Over-Provisioned Stations'}[highlightGroup]
-        : 'Ridership vs Sheltered Coverage — All ' + d.length + ' MRT/LRT Stations',
-      left:'center', top:12, textStyle:{fontSize:14,fontWeight:600,color:'#ccc'},
+        ? {well_served:'Case A: HDB Precinct Hubs', high_mismatch:'Case B: CBD Stations — Demand Without HDB', over_provisioned:'Case C: HDB-Embedded LRT — HDB Without Demand'}[highlightGroup]
+
+        : 'Shelter Coverage vs Station Factors — All ' + d.length + ' MRT/LRT Stations',
+      left:16, top:12, textStyle:{fontSize:13,fontWeight:600,color:'#ddd'},
     },
     tooltip: {
       trigger:'item', backgroundColor:'#1e222bf0', borderColor:'#3a3f4a', textStyle:{color:'#e8eaed',fontSize:12},
@@ -78,7 +79,7 @@ function renderChart(highlightGroup) {
     },
     xAxis: { name:'Daily Ridership (pax/day)', nameLocation:'middle', nameGap:36, nameTextStyle:{fontSize:12,color:'#888'}, type:'value', max:150000,
       axisLabel:{formatter:v=>v>=1000?(v/1000).toFixed(0)+'K':v,color:'#666',fontSize:10}, splitLine:{lineStyle:{color:'#1c2029'}}, axisLine:{lineStyle:{color:'#2a2f3a'}} },
-    yAxis: { name:'Sheltered Coverage (%)', nameLocation:'middle', nameGap:48, nameTextStyle:{fontSize:12,color:'#888'}, type:'value', max:80,
+    yAxis: { name:'Shelter Coverage (%)', nameLocation:'middle', nameGap:48, nameTextStyle:{fontSize:12,color:'#888'}, type:'value', max:80,
       axisLabel:{formatter:v=>v+'%',color:'#666',fontSize:10}, splitLine:{lineStyle:{color:'#1c2029'}}, axisLine:{lineStyle:{color:'#2a2f3a'}} },
     series: [{
       type:'scatter', data:seriesData,
@@ -125,69 +126,91 @@ function renderSidebar() {
     </div>
     <div id="view-overview">
       <div class="narrative">
-        <div class="section-tag"><div class="dot" style="background:var(--accent);"></div>Mismatch Score Calculation</div>
-        <div style="font-size:12px;line-height:1.8;">
-          <span style="color:#4fc3f7;">Demand</span> = 0.6 &times; ridership + 0.4 &times; rainfall<br>
-          <span style="color:#ef5350;">Mismatch</span> = Demand &times; (1 &minus; shelter_ratio)<br>
-          <span style="color:#ff9800;">Score</span> = normalize(Mismatch) &rarr; [0, 1]
-        </div>
+        <div class="section-tag"><div class="dot" style="background:var(--accent);"></div>The Puzzle</div>
+        Across <strong>${d.length} MRT/LRT stations</strong>, the scatter plot above shows <strong>no clear pattern</strong> between ridership, rainfall, and shelter coverage. Avg shelter coverage within 400m is only <strong>${(avgSr*100).toFixed(1)}%</strong>. Singapore's busiest stations often have shelter below 15%, while sleepy LRT stops exceed 40%.<br><br>
+        <em style="color:var(--muted);">If demand doesn't drive it, what does?</em>
       </div>
       <div class="narrative">
-        <div class="section-tag"><div class="dot" style="background:var(--accent);"></div>Overall Distribution</div>
-        Among <strong>${d.length} MRT/LRT stations</strong>, avg sheltered coverage within 400m is only <strong>${(avgSr*100).toFixed(1)}%</strong>.
-        Most stations cluster in the <strong>bottom-left</strong> — low ridership with moderate shelter.
-        The <strong>bottom-right quadrant</strong> reveals high-demand stations with <strong>inadequate shelter</strong> — the greatest mismatch.<br><br>
-        <em style="color:var(--muted);">Click any dot on the chart to explore its 400m map view with score breakdown.</em>
+        <div class="section-tag"><div class="dot" style="background:#4fc3f7;"></div>Correlation Analysis</div>
+        To answer that, we tested every plausible explanatory factor against shelter coverage (see bar chart below).
+        <br><br>
+        <strong>The result is striking</strong>:
+        <ul style="margin:6px 0 6px 16px;padding:0;">
+          <li><span style="color:#4fc3f7;">HDB count</span> — the dominant predictor (<b>r &asymp; +0.49</b>)</li>
+          <li>Ridership, rainfall — both weak (r &lt; 0.33)</li>
+          <li>Schools, healthcare — essentially no relationship</li>
+          <li>Commercial buildings — slightly negative</li>
+        </ul>
       </div>
-      <div class="insight"><strong>Key Insight:</strong> Shelter investment does not follow ridership linearly. Some of Singapore's busiest stations have shelter ratios below 15%, while low-traffic stations exceed 50%.</div>
+      <div class="insight">
+        <strong>Q1 Finding:</strong> Shelter coverage is not a response to commuter demand or rain exposure — it tracks <strong>HDB new town infrastructure</strong>. Shelter appears to be a byproduct of HDB precinct planning rather than a transit amenity.
+      </div>
+      <div class="narrative" style="border-color:#4fc3f7;">
+        <div class="section-tag"><div class="dot" style="background:#4fc3f7;"></div>&rarr; Transition to Q2</div>
+        If shelter follows HDB, is every HDB-rich area served <em>equally</em>? Q2 zooms out to the 26 planning areas and asks whether the age of the HDB stock — old estates vs new BTO towns — changes how much covered linkway each residential block actually gets.
+      </div>
     </div>
     <div id="view-well_served" style="display:none;">
       <div class="narrative">
-        <div class="section-tag"><div class="dot" style="background:var(--green);"></div>Case A: Well-Served Stations</div>
+        <div class="section-tag"><div class="dot" style="background:var(--green);"></div>Case A: HDB Precinct Hubs</div>
         <span class="station-tag green" onclick="openMapView('BOON LAY MRT STATION')">Boon Lay</span>
         <span class="station-tag green" onclick="openMapView('ANG MO KIO MRT STATION')">Ang Mo Kio</span>
         <span class="station-tag green" onclick="openMapView('CLEMENTI MRT STATION')">Clementi</span>
         <span class="station-tag green" onclick="openMapView('SENGKANG MRT STATION')">Sengkang</span><br><br>
-        These are <strong>1980s–2000s HDB new towns</strong>, where MRT station, bus interchange, hawker centre, and HDB blocks were <strong>co-designed as an integrated system</strong>. Dense HDB clusters create natural sheltered corridors from residences to the station.
+        These stations sit in the <strong>upper-right</strong> of the scatter — high ridership, high shelter. Opening any of their 400m maps reveals the same thing: <strong>dozens of HDB blocks</strong> packed around the station, threaded by a dense covered linkway network.
+        <br><br>
+        This is the pattern the correlation chart captures with <b>r &asymp; +0.49</b> for HDB count — where HDB is dense, shelter is dense.
       </div>
-      <div class="insight"><strong>Why they work:</strong><br>
-        <b>Boon Lay</b> (55%, 92K pax) — MRT directly connected to Jurong Point mall + bus interchange, forming a fully sheltered hub.<br>
-        <b>Ang Mo Kio</b> (54%, 81K pax) — station exits open into sheltered HDB void decks, with covered linkways threading through the precinct.<br>
-        <b>Clementi</b> (43%, 91K pax) — 3 schools within 400m also benefit from the shelter network.<br>
-        <b>Sengkang</b> (50%, 84K pax) — newer town but LRT + walkway system was built as part of the masterplan.</div>
+      <div class="insight"><strong>Reading the map:</strong><br>
+        <b>Boon Lay</b> (55% shelter, 92K pax) — surrounded by Jurong West HDB estate + Jurong Point mall.<br>
+        <b>Ang Mo Kio</b> (54%, 81K pax) — station exits open into HDB void decks, linkways threading through the precinct.<br>
+        <b>Clementi</b> (43%, 91K pax) — embedded in one of Singapore's oldest HDB new towns.<br>
+        <b>Sengkang</b> (50%, 84K pax) — LRT + covered linkway system built as part of the HDB masterplan.
+        <br><br>
+        <em style="color:var(--muted);">Role in the analysis: baseline — shows what "HDB count &rarr; shelter" looks like when the rule holds.</em>
+      </div>
     </div>
     <div id="view-high_mismatch" style="display:none;">
       <div class="narrative">
-        <div class="section-tag"><div class="dot" style="background:var(--red);"></div>Case B: High Mismatch</div>
+        <div class="section-tag"><div class="dot" style="background:var(--red);"></div>Case B: CBD Stations — Demand Without HDB</div>
         <span class="station-tag red" onclick="openMapView('ORCHARD MRT STATION')">Orchard</span>
         <span class="station-tag red" onclick="openMapView('PAYA LEBAR MRT STATION')">Paya Lebar</span>
         <span class="station-tag red" onclick="openMapView('CITY HALL MRT STATION')">City Hall</span>
         <span class="station-tag red" onclick="openMapView('DHOBY GHAUT MRT STATION')">Dhoby Ghaut</span>
         <span class="station-tag red" onclick="openMapView('BAYFRONT MRT STATION')">Bayfront</span><br><br>
-        Singapore's <strong>busiest stations</strong> but with <strong>shelter coverage under 13%</strong>. All located in the <strong>CBD / commercial core</strong> — areas dominated by private developments, malls, and offices where government-built covered linkways are sparse.
+        These are Singapore's <strong>busiest stations</strong>, yet shelter coverage is below 13%. If shelter tracked commuter demand, they should be at the top of every list — but they're not.
+        <br><br>
+        Opening their 400m maps reveals the common cause: <strong>almost zero HDB blocks nearby</strong>. They sit in the CBD / commercial core, dominated by private office towers and malls. The correlation chart already told us ridership only reaches <b>r = +0.26</b>; these cases show why — demand alone cannot summon shelter where there is no HDB precinct to anchor it.
       </div>
-      <div class="insight"><strong>Root causes:</strong><br>
-        <b>Orchard</b> (10.7%, 125K pax) — Singapore's shopping belt. Pedestrians rely on mall-to-mall underground links, but surface-level shelter is minimal.<br>
-        <b>Paya Lebar</b> (4.6%, 86K pax) — fragmented Geylang area: old shophouses mixed with new commercial towers, leaving gaps in the pedestrian network.<br>
-        <b>City Hall / Dhoby Ghaut</b> (9% / 6.4%) — colonial-era civic district, not designed for sheltered walkway integration.<br>
-        <b>Bayfront</b> (7.4%, 72K pax) — Marina Bay reclaimed land, still under development; shelter infrastructure lags behind.</div>
+      <div class="insight"><strong>Reading the map:</strong><br>
+        <b>Orchard</b> (11%, 125K pax) — Singapore's shopping belt. Pedestrians rely on mall-to-mall underground links; surface shelter is sparse.<br>
+        <b>Paya Lebar</b> (5%, 86K pax) — fragmented commercial/old shophouse mix; limited HDB nearby.<br>
+        <b>City Hall / Dhoby Ghaut</b> (9% / 6%) — colonial civic district; no HDB on the landmass.<br>
+        <b>Bayfront</b> (7%, 72K pax) — Marina Bay reclaimed land, no HDB at all.
+        <br><br>
+        <em style="color:var(--muted);">Role in the analysis: counter-example &#8544; &mdash; high demand + no HDB = no shelter. Directly falsifies "shelter follows demand".</em>
+      </div>
     </div>
     <div id="view-over_provisioned" style="display:none;">
       <div class="narrative">
-        <div class="section-tag"><div class="dot" style="background:var(--accent);"></div>Case C: Over-Provisioned</div>
+        <div class="section-tag"><div class="dot" style="background:var(--accent);"></div>Case C: HDB-Embedded LRT — HDB Without Demand</div>
         <span class="station-tag blue" onclick="openMapView('FERNVALE LRT STATION')">Fernvale</span>
         <span class="station-tag blue" onclick="openMapView('COMPASSVALE LRT STATION')">Compassvale</span>
         <span class="station-tag blue" onclick="openMapView('TAMPINES WEST MRT STATION')">Tampines West</span>
         <span class="station-tag blue" onclick="openMapView('SENJA LRT STATION')">Senja</span><br><br>
-        High shelter but low ridership. Click each station to see the <strong>schools and elderly facilities</strong> that may explain why shelter was prioritized here.
+        These LRT stations carry only <strong>2K&ndash;17K pax/day</strong> — a fraction of Case B's CBD stations — yet their shelter coverage is <strong>29&ndash;41%</strong>, comparable to the busiest HDB hubs.
+        <br><br>
+        A natural guess was "shelter is compensating for schools and elderly facilities here." But the correlation chart already rules that out: <b>School Count r = +0.03</b>, <b>Healthcare Count r = +0.14</b> — essentially no relationship. Both hypotheses fail.
+        <br><br>
+        Opening the maps gives the real answer: each of these stations is <strong>completely surrounded by HDB blocks</strong>. They're LRT / light-rail stops <em>inside</em> HDB estates, not major transit hubs. The HDB-count rule predicts exactly this outcome — low demand doesn't matter when the station is already embedded in a dense HDB precinct.
       </div>
-      <div class="insight"><strong>Why the "over-investment":</strong><br>
-        <b>Fernvale</b> (41%, 14K pax) — surrounded by <b>5 schools</b> including MINDS special education school. Sheltered linkways protect students walking to/from school.<br>
-        <b>Compassvale</b> (38%, 8K pax) — <b>4 schools</b> including CHIJ St Joseph's Convent and Compassvale Primary/Secondary.<br>
-        <b>Tampines West</b> (36%, 17K pax) — 2 schools + <b>Jamiyah Home for the Aged</b> (elderly nursing home).<br>
-        <b>Senja</b> (39%, 2.5K pax) — West View Primary School + <b>Pacific Healthcare Nursing Home</b>.</div>
-      <div class="transition-box">
-        <strong>&#8594; Transition to RQ2:</strong> These cases reveal that shelter allocation also considers <em>who</em> the commuters are — children and the elderly are more vulnerable to rain exposure. This introduces a <strong>vulnerability dimension</strong> that pure ridership numbers cannot capture, leading us to ask: <em>does shelter investment systematically prioritize vulnerable populations?</em>
+      <div class="insight"><strong>Reading the map:</strong><br>
+        <b>Fernvale</b> (41%, 14K pax) — Sengkang LRT inside a dense HDB cluster.<br>
+        <b>Compassvale</b> (38%, 8K pax) — another Sengkang LRT stop in the same HDB network.<br>
+        <b>Tampines West</b> (36%, 17K pax) — inside Tampines HDB estate.<br>
+        <b>Senja</b> (39%, 2.5K pax) — Bukit Panjang LRT, HDB blocks within metres of the platform.
+        <br><br>
+        <em style="color:var(--muted);">Role in the analysis: counter-example &#8545; &mdash; low demand + many HDB = shelter stays high. Also falsifies the "schools/elderly compensate" hypothesis.</em>
       </div>
     </div>
   `;
@@ -287,7 +310,7 @@ function renderMapSidebar(detail, summary) {
     <div class="score-section">
       <div class="title">Input Metrics</div>
       <div class="metric-row">
-        <span class="metric-label">Shelter Ratio</span>
+        <span class="metric-label">Shelter Coverage</span>
         <div class="metric-bar-bg"><div class="metric-bar" style="width:${sr*100}%;background:${sr<0.15?'var(--red)':sr<0.3?'var(--orange)':'var(--green)'};"></div></div>
         <span class="metric-value">${(sr*100).toFixed(1)}%</span>
       </div>
@@ -499,14 +522,96 @@ function initMap(detail, summary) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
+   RQ1 CORRELATION BAR CHART
+   ═══════════════════════════════════════════════════════════════════ */
+function renderCorrChart() {
+  const container = document.getElementById('chart-corr');
+  if (!container) return;
+  if (!corrChart) corrChart = echarts.init(container, 'dark');
+  const analysis = window.ANALYSIS;
+  if (!analysis || !analysis.rq1_correlations) return;
+
+  // Sort by |r| descending for bar ordering, then reverse for echarts (bars render bottom-up)
+  const sorted = [...analysis.rq1_correlations].sort((a, b) => Math.abs(a.r) - Math.abs(b.r));
+  const names = sorted.map(c => c.factor);
+  const vals = sorted.map(c => c.r);
+
+  // Color: strong positive = blue, weak = grey, negative = red
+  function corrColor(r) {
+    const abs = Math.abs(r);
+    if (r > 0.35) return '#4fc3f7';    // strong +: blue
+    if (r > 0.15) return '#81c784';    // moderate +: light green
+    if (abs <= 0.15) return '#616161'; // weak / none: grey
+    return '#ef5350';                   // negative: red
+  }
+
+  corrChart.setOption({
+    backgroundColor: '#0f1117',
+    animation: true,
+    animationDuration: 700,
+    title: {
+      text: 'Correlation: Shelter Coverage vs Candidate Factors',
+      left: 12, top: 6,
+      textStyle: { fontSize: 12, fontWeight: 600, color: '#ddd' },
+    },
+    grid: { left: 140, right: 60, top: 50, bottom: 22 },
+    tooltip: {
+      trigger: 'item',
+      backgroundColor: '#1e222bf0',
+      borderColor: '#3a3f4a',
+      textStyle: { color: '#e8eaed', fontSize: 11 },
+      formatter: p => `<b>${p.name}</b><br/>Pearson r = <b style="color:${corrColor(p.value)};">${p.value >= 0 ? '+' : ''}${p.value.toFixed(3)}</b>`,
+    },
+    xAxis: {
+      type: 'value',
+      min: -0.5, max: 1.0,
+      axisLabel: { color: '#888', fontSize: 10, formatter: v => v.toFixed(1) },
+      splitLine: { lineStyle: { color: '#1c2029' } },
+      axisLine: { lineStyle: { color: '#2a2f3a' } },
+    },
+    yAxis: {
+      type: 'category',
+      data: names,
+      axisLabel: { color: '#ccc', fontSize: 11, fontWeight: 500 },
+      axisLine: { lineStyle: { color: '#2a2f3a' } },
+      axisTick: { show: false },
+    },
+    series: [{
+      type: 'bar',
+      data: vals.map(v => ({ value: v, itemStyle: { color: corrColor(v) } })),
+      barWidth: '55%',
+      label: {
+        show: true,
+        position: v => v.value >= 0 ? 'right' : 'left',
+        formatter: p => (p.value >= 0 ? '+' : '') + p.value.toFixed(2),
+        color: '#fff',
+        fontSize: 10,
+        fontWeight: 600,
+      },
+      markLine: {
+        silent: true,
+        symbol: 'none',
+        lineStyle: { color: 'rgba(255,255,255,0.25)', type: 'dashed' },
+        data: [{ xAxis: 0 }],
+      },
+    }],
+  }, true);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
    Q1 INIT — called when data is ready and Q1 is shown
    ═══════════════════════════════════════════════════════════════════ */
 function q1Init() {
   renderSidebar();
   renderChart(null);
-  window.addEventListener('resize', () => { if (chart) chart.resize(); });
+  renderCorrChart();
+  window.addEventListener('resize', () => {
+    if (chart) chart.resize();
+    if (corrChart) corrChart.resize();
+  });
 }
 
 function q1Show() {
   if (chart) setTimeout(() => chart.resize(), 50);
+  if (corrChart) setTimeout(() => corrChart.resize(), 50);
 }
