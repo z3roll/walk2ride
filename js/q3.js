@@ -242,9 +242,9 @@ function renderQ3CommuterRose() {
   
   // 3 groups: old / mid / new — each is 3 areas merged together
   const groups = [
-    { label: 'Old estates', areas: ['BUKIT MERAH', 'QUEENSTOWN', 'KALLANG'], color: '#66bb6a', umbrellaColor: '#66bb6a' },
-    { label: 'Mid-age estates', areas: ['CHOA CHU KANG', 'TOA PAYOH', 'BISHAN'], color: '#ffeb3b', umbrellaColor: '#ffeb3b' },
-    { label: 'New BTO towns', areas: ['SENGKANG', 'SEMBAWANG', 'PUNGGOL'], color: '#ef5350', umbrellaColor: '#ef5350' },
+    { label: 'Old HDB', areas: ['BUKIT MERAH', 'QUEENSTOWN', 'KALLANG'], color: '#66bb6a', umbrellaColor: '#66bb6a' },
+    { label: 'Mid-age HDB', areas: ['CHOA CHU KANG', 'TOA PAYOH', 'BISHAN'], color: '#ffeb3b', umbrellaColor: '#ffeb3b' },
+    { label: 'New HDB', areas: ['SENGKANG', 'SEMBAWANG', 'PUNGGOL'], color: '#ef5350', umbrellaColor: '#ef5350' },
   ];
 
   let displayAreas = groups.map(g => {
@@ -375,20 +375,6 @@ function renderQ3CommuterRose() {
     }
     viz.appendChild(grid);
 
-    // Rain overlay for unprotected parts
-    if (coveragePct < 100) {
-      const rainWidth = (100 - coveragePct) / 2;
-      const rainLeft = document.createElement('div');
-      const rainRight = document.createElement('div');
-      
-      const rainStyle = `position: absolute; top: 22px; bottom: 0; width: ${rainWidth}%; background: repeating-linear-gradient(15deg, transparent, transparent 6px, rgba(100,150,255,0.2) 6px, rgba(100,150,255,0.2) 8px); pointer-events: none; z-index: 3;`;
-      
-      rainLeft.style.cssText = rainStyle + ' left: 0;';
-      rainRight.style.cssText = rainStyle + ' right: 0;';
-      
-      viz.appendChild(rainLeft);
-      viz.appendChild(rainRight);
-    }
 
     block.appendChild(viz);
     container.appendChild(block);
@@ -421,8 +407,8 @@ function renderQ3Sidebar() {
     <div class="narrative">
       <div class="section-tag"><div class="dot" style="background:#ef5350;"></div>Chart 2 — The coverage gap in human terms</div>
       Each person icon represents working-age commuters (25–50); the umbrella shows how much covered linkway each 1,000 of them share — for shelter from both rain and sun.
-      Old estates (green) have a smaller commuter base under a wide umbrella (<strong>3.85 / 1k</strong>).
-      New BTO towns (red) pack the largest crowd yet get the smallest umbrella (<strong>2.00 / 1k</strong>).
+      Old HDB (green) have a smaller commuter base under a wide umbrella (<strong>3.85 / 1k</strong>).
+      New HDB (red) pack the largest crowd yet get the smallest umbrella (<strong>2.00 / 1k</strong>).
       From left to right the population grows while the umbrella shrinks — that asymmetry is the gap.
     </div>
 
