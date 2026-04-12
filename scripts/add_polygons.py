@@ -14,7 +14,7 @@ import numpy as np
 warnings.filterwarnings("ignore")
 
 BASE = Path(__file__).resolve().parent.parent
-POI_DIR = BASE / "q1" / "data" / "poi"
+POI_DIR = BASE / "data" / "raw" / "poi"
 HDB_PATH = BASE / "dataset" / "2025.08" / "HDBExistingBuilding.geojson"
 AREA_INFRA = BASE / "data" / "area_infra.json"
 SERVICES = BASE / "data" / "services_shelter.json"

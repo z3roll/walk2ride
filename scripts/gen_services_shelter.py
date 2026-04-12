@@ -32,10 +32,10 @@ log = logging.getLogger(__name__)
 # ── paths ────────────────────────────────────────────────────────────────
 BASE = Path(__file__).resolve().parent.parent
 DATASET_GEO = BASE / "dataset" / "2026" / "03" / "Static_ 2026_03" / "GEOSPATIAL"
-POI_DIR = BASE / "q1" / "data" / "poi"
+POI_DIR = BASE / "data" / "raw" / "poi"
 HDB_PATH = BASE / "dataset" / "2025.08" / "HDBExistingBuilding.geojson"
-PLANNING_AREA = BASE / "q2" / "data" / "planning_area_boundaries.geojson"
-OUTPUT = BASE / "scripts" / "output" / "services_shelter.json"
+PLANNING_AREA = BASE / "data" / "raw" / "planning_area_boundaries.geojson"
+OUTPUT = BASE / "data" / "services_shelter.json"
 
 CRS_WGS = "EPSG:4326"
 CRS_SVY = "EPSG:3414"

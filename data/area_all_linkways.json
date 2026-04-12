@@ -1,0 +1,425 @@
+[
+  {
+    "name": "SENGKANG",
+    "n_total_blocks": 405,
+    "lw_pre2019": 114,
+    "lw_2019_2022": 12,
+    "lw_2023_2024": 169,
+    "lw_2025_plus": 110,
+    "lw_post2019": 291
+  },
+  {
+    "name": "TAMPINES",
+    "n_total_blocks": 397,
+    "lw_pre2019": 143,
+    "lw_2019_2022": 51,
+    "lw_2023_2024": 142,
+    "lw_2025_plus": 61,
+    "lw_post2019": 254
+  },
+  {
+    "name": "GEYLANG",
+    "n_total_blocks": 368,
+    "lw_pre2019": 170,
+    "lw_2019_2022": 86,
+    "lw_2023_2024": 112,
+    "lw_2025_plus": 0,
+    "lw_post2019": 198
+  },
+  {
+    "name": "QUEENSTOWN",
+    "n_total_blocks": 356,
+    "lw_pre2019": 141,
+    "lw_2019_2022": 26,
+    "lw_2023_2024": 189,
+    "lw_2025_plus": 0,
+    "lw_post2019": 215
+  },
+  {
+    "name": "KALLANG",
+    "n_total_blocks": 353,
+    "lw_pre2019": 164,
+    "lw_2019_2022": 68,
+    "lw_2023_2024": 116,
+    "lw_2025_plus": 5,
+    "lw_post2019": 189
+  },
+  {
+    "name": "BUKIT PANJANG",
+    "n_total_blocks": 337,
+    "lw_pre2019": 65,
+    "lw_2019_2022": 1,
+    "lw_2023_2024": 22,
+    "lw_2025_plus": 249,
+    "lw_post2019": 272
+  },
+  {
+    "name": "CHOA CHU KANG",
+    "n_total_blocks": 326,
+    "lw_pre2019": 58,
+    "lw_2019_2022": 3,
+    "lw_2023_2024": 213,
+    "lw_2025_plus": 52,
+    "lw_post2019": 268
+  },
+  {
+    "name": "WOODLANDS",
+    "n_total_blocks": 323,
+    "lw_pre2019": 137,
+    "lw_2019_2022": 52,
+    "lw_2023_2024": 133,
+    "lw_2025_plus": 1,
+    "lw_post2019": 186
+  },
+  {
+    "name": "BUKIT MERAH",
+    "n_total_blocks": 322,
+    "lw_pre2019": 121,
+    "lw_2019_2022": 23,
+    "lw_2023_2024": 178,
+    "lw_2025_plus": 0,
+    "lw_post2019": 201
+  },
+  {
+    "name": "BUKIT BATOK",
+    "n_total_blocks": 320,
+    "lw_pre2019": 69,
+    "lw_2019_2022": 83,
+    "lw_2023_2024": 99,
+    "lw_2025_plus": 69,
+    "lw_post2019": 251
+  },
+  {
+    "name": "BEDOK",
+    "n_total_blocks": 314,
+    "lw_pre2019": 124,
+    "lw_2019_2022": 46,
+    "lw_2023_2024": 139,
+    "lw_2025_plus": 5,
+    "lw_post2019": 190
+  },
+  {
+    "name": "JURONG WEST",
+    "n_total_blocks": 290,
+    "lw_pre2019": 73,
+    "lw_2019_2022": 195,
+    "lw_2023_2024": 17,
+    "lw_2025_plus": 5,
+    "lw_post2019": 217
+  },
+  {
+    "name": "TOA PAYOH",
+    "n_total_blocks": 284,
+    "lw_pre2019": 100,
+    "lw_2019_2022": 55,
+    "lw_2023_2024": 83,
+    "lw_2025_plus": 46,
+    "lw_post2019": 184
+  },
+  {
+    "name": "ANG MO KIO",
+    "n_total_blocks": 266,
+    "lw_pre2019": 85,
+    "lw_2019_2022": 2,
+    "lw_2023_2024": 179,
+    "lw_2025_plus": 0,
+    "lw_post2019": 181
+  },
+  {
+    "name": "HOUGANG",
+    "n_total_blocks": 249,
+    "lw_pre2019": 139,
+    "lw_2019_2022": 34,
+    "lw_2023_2024": 75,
+    "lw_2025_plus": 1,
+    "lw_post2019": 110
+  },
+  {
+    "name": "BUKIT TIMAH",
+    "n_total_blocks": 234,
+    "lw_pre2019": 74,
+    "lw_2019_2022": 10,
+    "lw_2023_2024": 65,
+    "lw_2025_plus": 85,
+    "lw_post2019": 160
+  },
+  {
+    "name": "YISHUN",
+    "n_total_blocks": 199,
+    "lw_pre2019": 69,
+    "lw_2019_2022": 62,
+    "lw_2023_2024": 64,
+    "lw_2025_plus": 4,
+    "lw_post2019": 130
+  },
+  {
+    "name": "SERANGOON",
+    "n_total_blocks": 152,
+    "lw_pre2019": 103,
+    "lw_2019_2022": 28,
+    "lw_2023_2024": 20,
+    "lw_2025_plus": 1,
+    "lw_post2019": 49
+  },
+  {
+    "name": "BISHAN",
+    "n_total_blocks": 146,
+    "lw_pre2019": 74,
+    "lw_2019_2022": 10,
+    "lw_2023_2024": 52,
+    "lw_2025_plus": 10,
+    "lw_post2019": 72
+  },
+  {
+    "name": "PUNGGOL",
+    "n_total_blocks": 146,
+    "lw_pre2019": 29,
+    "lw_2019_2022": 5,
+    "lw_2023_2024": 22,
+    "lw_2025_plus": 90,
+    "lw_post2019": 117
+  },
+  {
+    "name": "CLEMENTI",
+    "n_total_blocks": 145,
+    "lw_pre2019": 93,
+    "lw_2019_2022": 6,
+    "lw_2023_2024": 44,
+    "lw_2025_plus": 2,
+    "lw_post2019": 52
+  },
+  {
+    "name": "JURONG EAST",
+    "n_total_blocks": 144,
+    "lw_pre2019": 87,
+    "lw_2019_2022": 43,
+    "lw_2023_2024": 14,
+    "lw_2025_plus": 0,
+    "lw_post2019": 57
+  },
+  {
+    "name": "PASIR RIS",
+    "n_total_blocks": 137,
+    "lw_pre2019": 65,
+    "lw_2019_2022": 66,
+    "lw_2023_2024": 6,
+    "lw_2025_plus": 0,
+    "lw_post2019": 72
+  },
+  {
+    "name": "NOVENA",
+    "n_total_blocks": 133,
+    "lw_pre2019": 66,
+    "lw_2019_2022": 0,
+    "lw_2023_2024": 22,
+    "lw_2025_plus": 45,
+    "lw_post2019": 67
+  },
+  {
+    "name": "ROCHOR",
+    "n_total_blocks": 122,
+    "lw_pre2019": 76,
+    "lw_2019_2022": 15,
+    "lw_2023_2024": 20,
+    "lw_2025_plus": 11,
+    "lw_post2019": 46
+  },
+  {
+    "name": "SEMBAWANG",
+    "n_total_blocks": 115,
+    "lw_pre2019": 40,
+    "lw_2019_2022": 70,
+    "lw_2023_2024": 5,
+    "lw_2025_plus": 0,
+    "lw_post2019": 75
+  },
+  {
+    "name": "DOWNTOWN CORE",
+    "n_total_blocks": 64,
+    "lw_pre2019": 49,
+    "lw_2019_2022": 1,
+    "lw_2023_2024": 11,
+    "lw_2025_plus": 3,
+    "lw_post2019": 15
+  },
+  {
+    "name": "TANGLIN",
+    "n_total_blocks": 64,
+    "lw_pre2019": 38,
+    "lw_2019_2022": 0,
+    "lw_2023_2024": 26,
+    "lw_2025_plus": 0,
+    "lw_post2019": 26
+  },
+  {
+    "name": "MARINE PARADE",
+    "n_total_blocks": 51,
+    "lw_pre2019": 41,
+    "lw_2019_2022": 10,
+    "lw_2023_2024": 0,
+    "lw_2025_plus": 0,
+    "lw_post2019": 10
+  },
+  {
+    "name": "PIONEER",
+    "n_total_blocks": 33,
+    "lw_pre2019": 27,
+    "lw_2019_2022": 5,
+    "lw_2023_2024": 1,
+    "lw_2025_plus": 0,
+    "lw_post2019": 6
+  },
+  {
+    "name": "ORCHARD",
+    "n_total_blocks": 31,
+    "lw_pre2019": 27,
+    "lw_2019_2022": 0,
+    "lw_2023_2024": 3,
+    "lw_2025_plus": 1,
+    "lw_post2019": 4
+  },
+  {
+    "name": "MUSEUM",
+    "n_total_blocks": 30,
+    "lw_pre2019": 21,
+    "lw_2019_2022": 0,
+    "lw_2023_2024": 9,
+    "lw_2025_plus": 0,
+    "lw_post2019": 9
+  },
+  {
+    "name": "OUTRAM",
+    "n_total_blocks": 29,
+    "lw_pre2019": 13,
+    "lw_2019_2022": 1,
+    "lw_2023_2024": 15,
+    "lw_2025_plus": 0,
+    "lw_post2019": 16
+  },
+  {
+    "name": "SINGAPORE RIVER",
+    "n_total_blocks": 22,
+    "lw_pre2019": 14,
+    "lw_2019_2022": 0,
+    "lw_2023_2024": 8,
+    "lw_2025_plus": 0,
+    "lw_post2019": 8
+  },
+  {
+    "name": "NEWTON",
+    "n_total_blocks": 16,
+    "lw_pre2019": 12,
+    "lw_2019_2022": 0,
+    "lw_2023_2024": 0,
+    "lw_2025_plus": 4,
+    "lw_post2019": 4
+  },
+  {
+    "name": "SUNGEI KADUT",
+    "n_total_blocks": 16,
+    "lw_pre2019": 7,
+    "lw_2019_2022": 9,
+    "lw_2023_2024": 0,
+    "lw_2025_plus": 0,
+    "lw_post2019": 9
+  },
+  {
+    "name": "RIVER VALLEY",
+    "n_total_blocks": 14,
+    "lw_pre2019": 14,
+    "lw_2019_2022": 0,
+    "lw_2023_2024": 0,
+    "lw_2025_plus": 0,
+    "lw_post2019": 0
+  },
+  {
+    "name": "CHANGI",
+    "n_total_blocks": 11,
+    "lw_pre2019": 1,
+    "lw_2019_2022": 1,
+    "lw_2023_2024": 9,
+    "lw_2025_plus": 0,
+    "lw_post2019": 10
+  },
+  {
+    "name": "SELETAR",
+    "n_total_blocks": 11,
+    "lw_pre2019": 1,
+    "lw_2019_2022": 8,
+    "lw_2023_2024": 2,
+    "lw_2025_plus": 0,
+    "lw_post2019": 10
+  },
+  {
+    "name": "CENTRAL WATER CATCHMENT",
+    "n_total_blocks": 9,
+    "lw_pre2019": 9,
+    "lw_2019_2022": 0,
+    "lw_2023_2024": 0,
+    "lw_2025_plus": 0,
+    "lw_post2019": 0
+  },
+  {
+    "name": "TUAS",
+    "n_total_blocks": 7,
+    "lw_pre2019": 0,
+    "lw_2019_2022": 0,
+    "lw_2023_2024": 7,
+    "lw_2025_plus": 0,
+    "lw_post2019": 7
+  },
+  {
+    "name": "BOON LAY",
+    "n_total_blocks": 6,
+    "lw_pre2019": 6,
+    "lw_2019_2022": 0,
+    "lw_2023_2024": 0,
+    "lw_2025_plus": 0,
+    "lw_post2019": 0
+  },
+  {
+    "name": "WESTERN WATER CATCHMENT",
+    "n_total_blocks": 6,
+    "lw_pre2019": 5,
+    "lw_2019_2022": 0,
+    "lw_2023_2024": 1,
+    "lw_2025_plus": 0,
+    "lw_post2019": 1
+  },
+  {
+    "name": "MANDAI",
+    "n_total_blocks": 4,
+    "lw_pre2019": 4,
+    "lw_2019_2022": 0,
+    "lw_2023_2024": 0,
+    "lw_2025_plus": 0,
+    "lw_post2019": 0
+  },
+  {
+    "name": "PAYA LEBAR",
+    "n_total_blocks": 2,
+    "lw_pre2019": 1,
+    "lw_2019_2022": 0,
+    "lw_2023_2024": 0,
+    "lw_2025_plus": 1,
+    "lw_post2019": 1
+  },
+  {
+    "name": "STRAITS VIEW",
+    "n_total_blocks": 2,
+    "lw_pre2019": 2,
+    "lw_2019_2022": 0,
+    "lw_2023_2024": 0,
+    "lw_2025_plus": 0,
+    "lw_post2019": 0
+  },
+  {
+    "name": "TENGAH",
+    "n_total_blocks": 1,
+    "lw_pre2019": 1,
+    "lw_2019_2022": 0,
+    "lw_2023_2024": 0,
+    "lw_2025_plus": 0,
+    "lw_post2019": 0
+  }
+]

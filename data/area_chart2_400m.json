@@ -1,0 +1,470 @@
+[
+  {
+    "name": "SENGKANG",
+    "n_hdb_400m": 534,
+    "lw_length_m": 13194.4,
+    "year_mean": 2005.1,
+    "year_buckets": {
+      "pre1980": 0,
+      "d1980s": 0,
+      "d1990s": 196,
+      "d2000s": 158,
+      "d2010s": 171,
+      "d2020s": 9
+    },
+    "n_hdb_full": 669,
+    "lw_length_full": 12605.0,
+    "year_mean_full": 2006.2,
+    "total_pop": 267960
+  },
+  {
+    "name": "BUKIT PANJANG",
+    "n_hdb_400m": 300,
+    "lw_length_m": 11031.9,
+    "year_mean": 1995.9,
+    "year_buckets": {
+      "pre1980": 0,
+      "d1980s": 131,
+      "d1990s": 85,
+      "d2000s": 39,
+      "d2010s": 34,
+      "d2020s": 11
+    },
+    "n_hdb_full": 346,
+    "lw_length_full": 10082.3,
+    "year_mean_full": 1995.8,
+    "total_pop": 136840
+  },
+  {
+    "name": "GEYLANG",
+    "n_hdb_400m": 180,
+    "lw_length_m": 10126.4,
+    "year_mean": 1983.0,
+    "year_buckets": {
+      "pre1980": 107,
+      "d1980s": 22,
+      "d1990s": 10,
+      "d2000s": 1,
+      "d2010s": 6,
+      "d2020s": 34
+    },
+    "n_hdb_full": 350,
+    "lw_length_full": 10530.4,
+    "year_mean_full": 1981.0,
+    "total_pop": 117900
+  },
+  {
+    "name": "CHOA CHU KANG",
+    "n_hdb_400m": 217,
+    "lw_length_m": 9263.3,
+    "year_mean": 1993.0,
+    "year_buckets": {
+      "pre1980": 10,
+      "d1980s": 59,
+      "d1990s": 131,
+      "d2000s": 0,
+      "d2010s": 11,
+      "d2020s": 6
+    },
+    "n_hdb_full": 529,
+    "lw_length_full": 10406.2,
+    "year_mean_full": 1996.5,
+    "total_pop": 188210
+  },
+  {
+    "name": "TAMPINES",
+    "n_hdb_400m": 204,
+    "lw_length_m": 8001.1,
+    "year_mean": 1988.8,
+    "year_buckets": {
+      "pre1980": 0,
+      "d1980s": 160,
+      "d1990s": 22,
+      "d2000s": 0,
+      "d2010s": 11,
+      "d2020s": 11
+    },
+    "n_hdb_full": 918,
+    "lw_length_full": 12668.8,
+    "year_mean_full": 1995.0,
+    "total_pop": 290800
+  },
+  {
+    "name": "TOA PAYOH",
+    "n_hdb_400m": 162,
+    "lw_length_m": 7182.7,
+    "year_mean": 1988.9,
+    "year_buckets": {
+      "pre1980": 74,
+      "d1980s": 20,
+      "d1990s": 23,
+      "d2000s": 8,
+      "d2010s": 8,
+      "d2020s": 29
+    },
+    "n_hdb_full": 425,
+    "lw_length_full": 9700.0,
+    "year_mean_full": 1987.9,
+    "total_pop": 143300
+  },
+  {
+    "name": "QUEENSTOWN",
+    "n_hdb_400m": 88,
+    "lw_length_m": 7007.3,
+    "year_mean": 1972.8,
+    "year_buckets": {
+      "pre1980": 69,
+      "d1980s": 0,
+      "d1990s": 11,
+      "d2000s": 2,
+      "d2010s": 0,
+      "d2020s": 6
+    },
+    "n_hdb_full": 265,
+    "lw_length_full": 12329.5,
+    "year_mean_full": 1974.5,
+    "total_pop": 101830
+  },
+  {
+    "name": "BEDOK",
+    "n_hdb_400m": 101,
+    "lw_length_m": 6995.2,
+    "year_mean": 1986.7,
+    "year_buckets": {
+      "pre1980": 33,
+      "d1980s": 29,
+      "d1990s": 31,
+      "d2000s": 4,
+      "d2010s": 1,
+      "d2020s": 3
+    },
+    "n_hdb_full": 532,
+    "lw_length_full": 10024.9,
+    "year_mean_full": 1984.2,
+    "total_pop": 274940
+  },
+  {
+    "name": "JURONG WEST",
+    "n_hdb_400m": 106,
+    "lw_length_m": 6814.0,
+    "year_mean": 1999.0,
+    "year_buckets": {
+      "pre1980": 0,
+      "d1980s": 8,
+      "d1990s": 50,
+      "d2000s": 42,
+      "d2010s": 6,
+      "d2020s": 0
+    },
+    "n_hdb_full": 750,
+    "lw_length_full": 10053.9,
+    "year_mean_full": 1993.5,
+    "total_pop": 254310
+  },
+  {
+    "name": "KALLANG",
+    "n_hdb_400m": 128,
+    "lw_length_m": 6470.6,
+    "year_mean": 1983.3,
+    "year_buckets": {
+      "pre1980": 63,
+      "d1980s": 26,
+      "d1990s": 4,
+      "d2000s": 14,
+      "d2010s": 16,
+      "d2020s": 5
+    },
+    "n_hdb_full": 255,
+    "lw_length_full": 11714.3,
+    "year_mean_full": 1977.2,
+    "total_pop": 102440
+  },
+  {
+    "name": "BUKIT MERAH",
+    "n_hdb_400m": 123,
+    "lw_length_m": 6397.3,
+    "year_mean": 1965.2,
+    "year_buckets": {
+      "pre1980": 88,
+      "d1980s": 4,
+      "d1990s": 9,
+      "d2000s": 18,
+      "d2010s": 4,
+      "d2020s": 0
+    },
+    "n_hdb_full": 485,
+    "lw_length_full": 10644.9,
+    "year_mean_full": 1967.4,
+    "total_pop": 147690
+  },
+  {
+    "name": "WOODLANDS",
+    "n_hdb_400m": 167,
+    "lw_length_m": 5910.8,
+    "year_mean": 1994.8,
+    "year_buckets": {
+      "pre1980": 0,
+      "d1980s": 50,
+      "d1990s": 105,
+      "d2000s": 0,
+      "d2010s": 9,
+      "d2020s": 3
+    },
+    "n_hdb_full": 736,
+    "lw_length_full": 9972.8,
+    "year_mean_full": 1995.6,
+    "total_pop": 254940
+  },
+  {
+    "name": "BUKIT TIMAH",
+    "n_hdb_400m": 19,
+    "lw_length_m": 5699.2,
+    "year_mean": 1977.8,
+    "year_buckets": {
+      "pre1980": 14,
+      "d1980s": 4,
+      "d1990s": 1,
+      "d2000s": 0,
+      "d2010s": 0,
+      "d2020s": 0
+    },
+    "n_hdb_full": 26,
+    "lw_length_full": 7895.0,
+    "year_mean_full": 1982.3,
+    "total_pop": 86670
+  },
+  {
+    "name": "BUKIT BATOK",
+    "n_hdb_400m": 79,
+    "lw_length_m": 4624.0,
+    "year_mean": 1986.7,
+    "year_buckets": {
+      "pre1980": 0,
+      "d1980s": 69,
+      "d1990s": 6,
+      "d2000s": 3,
+      "d2010s": 1,
+      "d2020s": 0
+    },
+    "n_hdb_full": 435,
+    "lw_length_full": 9237.6,
+    "year_mean_full": 1993.2,
+    "total_pop": 166560
+  },
+  {
+    "name": "PUNGGOL",
+    "n_hdb_400m": 470,
+    "lw_length_m": 4533.5,
+    "year_mean": 2010.2,
+    "year_buckets": {
+      "pre1980": 0,
+      "d1980s": 0,
+      "d1990s": 0,
+      "d2000s": 185,
+      "d2010s": 230,
+      "d2020s": 55
+    },
+    "n_hdb_full": 557,
+    "lw_length_full": 4576.2,
+    "year_mean_full": 2011.4,
+    "total_pop": 204480
+  },
+  {
+    "name": "ANG MO KIO",
+    "n_hdb_400m": 90,
+    "lw_length_m": 4404.5,
+    "year_mean": 1982.7,
+    "year_buckets": {
+      "pre1980": 58,
+      "d1980s": 17,
+      "d1990s": 4,
+      "d2000s": 6,
+      "d2010s": 2,
+      "d2020s": 3
+    },
+    "n_hdb_full": 392,
+    "lw_length_full": 7462.1,
+    "year_mean_full": 1982.5,
+    "total_pop": 159500
+  },
+  {
+    "name": "ROCHOR",
+    "n_hdb_400m": 14,
+    "lw_length_m": 4404.3,
+    "year_mean": 1975.1,
+    "year_buckets": {
+      "pre1980": 8,
+      "d1980s": 5,
+      "d1990s": 1,
+      "d2000s": 0,
+      "d2010s": 0,
+      "d2020s": 0
+    },
+    "n_hdb_full": 0,
+    "lw_length_full": 3261.5,
+    "year_mean_full": 1975.1,
+    "total_pop": 12830
+  },
+  {
+    "name": "JURONG EAST",
+    "n_hdb_400m": 15,
+    "lw_length_m": 3873.9,
+    "year_mean": 1982.9,
+    "year_buckets": {
+      "pre1980": 0,
+      "d1980s": 15,
+      "d1990s": 0,
+      "d2000s": 0,
+      "d2010s": 0,
+      "d2020s": 0
+    },
+    "n_hdb_full": 231,
+    "lw_length_full": 6402.1,
+    "year_mean_full": 1986.7,
+    "total_pop": 73050
+  },
+  {
+    "name": "BISHAN",
+    "n_hdb_400m": 42,
+    "lw_length_m": 3366.6,
+    "year_mean": 1985.6,
+    "year_buckets": {
+      "pre1980": 2,
+      "d1980s": 39,
+      "d1990s": 0,
+      "d2000s": 0,
+      "d2010s": 1,
+      "d2020s": 0
+    },
+    "n_hdb_full": 232,
+    "lw_length_full": 5085.2,
+    "year_mean_full": 1988.4,
+    "total_pop": 87900
+  },
+  {
+    "name": "YISHUN",
+    "n_hdb_400m": 120,
+    "lw_length_m": 3276.2,
+    "year_mean": 1986.1,
+    "year_buckets": {
+      "pre1980": 0,
+      "d1980s": 113,
+      "d1990s": 4,
+      "d2000s": 1,
+      "d2010s": 2,
+      "d2020s": 0
+    },
+    "n_hdb_full": 702,
+    "lw_length_full": 5825.2,
+    "year_mean_full": 1994.7,
+    "total_pop": 229460
+  },
+  {
+    "name": "SERANGOON",
+    "n_hdb_400m": 52,
+    "lw_length_m": 2289.8,
+    "year_mean": 1985.5,
+    "year_buckets": {
+      "pre1980": 4,
+      "d1980s": 48,
+      "d1990s": 0,
+      "d2000s": 0,
+      "d2010s": 0,
+      "d2020s": 0
+    },
+    "n_hdb_full": 232,
+    "lw_length_full": 4828.6,
+    "year_mean_full": 1987.5,
+    "total_pop": 117200
+  },
+  {
+    "name": "SEMBAWANG",
+    "n_hdb_400m": 97,
+    "lw_length_m": 2018.1,
+    "year_mean": 2006.4,
+    "year_buckets": {
+      "pre1980": 0,
+      "d1980s": 0,
+      "d1990s": 49,
+      "d2000s": 15,
+      "d2010s": 18,
+      "d2020s": 15
+    },
+    "n_hdb_full": 281,
+    "lw_length_full": 3276.5,
+    "year_mean_full": 2006.9,
+    "total_pop": 113900
+  },
+  {
+    "name": "HOUGANG",
+    "n_hdb_400m": 45,
+    "lw_length_m": 1996.5,
+    "year_mean": 1988.4,
+    "year_buckets": {
+      "pre1980": 0,
+      "d1980s": 26,
+      "d1990s": 19,
+      "d2000s": 0,
+      "d2010s": 0,
+      "d2020s": 0
+    },
+    "n_hdb_full": 602,
+    "lw_length_full": 6612.8,
+    "year_mean_full": 1992.2,
+    "total_pop": 227930
+  },
+  {
+    "name": "CLEMENTI",
+    "n_hdb_400m": 42,
+    "lw_length_m": 1466.5,
+    "year_mean": 1986.0,
+    "year_buckets": {
+      "pre1980": 28,
+      "d1980s": 4,
+      "d1990s": 0,
+      "d2000s": 3,
+      "d2010s": 5,
+      "d2020s": 2
+    },
+    "n_hdb_full": 206,
+    "lw_length_full": 4483.4,
+    "year_mean_full": 1987.3,
+    "total_pop": 104740
+  },
+  {
+    "name": "PASIR RIS",
+    "n_hdb_400m": 37,
+    "lw_length_m": 1452.7,
+    "year_mean": 2000.1,
+    "year_buckets": {
+      "pre1980": 0,
+      "d1980s": 0,
+      "d1990s": 25,
+      "d2000s": 0,
+      "d2010s": 12,
+      "d2020s": 0
+    },
+    "n_hdb_full": 445,
+    "lw_length_full": 5250.2,
+    "year_mean_full": 1993.9,
+    "total_pop": 144640
+  },
+  {
+    "name": "MARINE PARADE",
+    "n_hdb_400m": 48,
+    "lw_length_m": 1056.5,
+    "year_mean": 1974.9,
+    "year_buckets": {
+      "pre1980": 47,
+      "d1980s": 0,
+      "d1990s": 1,
+      "d2000s": 0,
+      "d2010s": 0,
+      "d2020s": 0
+    },
+    "n_hdb_full": 59,
+    "lw_length_full": 1748.0,
+    "year_mean_full": 1974.5,
+    "total_pop": 47780
+  }
+]

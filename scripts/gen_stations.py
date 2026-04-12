@@ -22,13 +22,12 @@ warnings.filterwarnings("ignore")
 # ── paths ─────────────────────────────────────────────────────────────
 BASE = Path(__file__).resolve().parent.parent
 DATASET = BASE / "dataset" / "2026" / "03" / "Static_ 2026_03" / "GEOSPATIAL"
-Q1 = Path(__file__).resolve().parent
-OUT = Q1 / "data"
+OUT = BASE / "data"
 DETAIL = OUT / "station_details"
 DETAIL.mkdir(parents=True, exist_ok=True)
 
-RAINFALL_JSON = Q1 / "data" / "rainfall" / "sg_rainfall_summary.json"
-PAX_DIR = Q1 / "data" / "passenger_volume"
+RAINFALL_JSON = BASE / "data" / "raw" / "rainfall" / "sg_rainfall_summary.json"
+PAX_DIR = BASE / "data" / "raw" / "passenger_volume"
 
 CRS_WGS = "EPSG:4326"
 CRS_SVY = "EPSG:3414"

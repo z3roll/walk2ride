@@ -31,9 +31,9 @@ log = logging.getLogger(__name__)
 # ── paths ────────────────────────────────────────────────────────────────
 BASE = Path(__file__).resolve().parent.parent
 DATASET_GEO = BASE / "dataset" / "2026" / "03" / "Static_ 2026_03" / "GEOSPATIAL"
-CENSUS_CSV = BASE / "q3" / "data" / "census2020_planning_area_age.csv"
-PLANNING_AREA = BASE / "q2" / "data" / "planning_area_boundaries.geojson"
-OUTPUT = BASE / "scripts" / "output" / "rq3_planning_areas.json"
+CENSUS_CSV = BASE / "data" / "raw" / "census2020_planning_area_age.csv"
+PLANNING_AREA = BASE / "data" / "raw" / "planning_area_boundaries.geojson"
+OUTPUT = BASE / "data" / "rq3_planning_areas.json"
 
 CRS_WGS = "EPSG:4326"
 CRS_SVY = "EPSG:3414"

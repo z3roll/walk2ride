@@ -1,0 +1,169 @@
+{
+  "source": "Meteorological Service Singapore (MSS) / NEA",
+  "url": "http://www.weather.gov.sg/climate-historical-daily/",
+  "reference_period": "2015-2024 (10 years)",
+  "island_wide_avg_mm": 2369.9,
+  "note": "Per-station annual averages computed from daily data",
+  "stations": [
+    {
+      "station_code": "S24",
+      "station_name": "Changi",
+      "region": "East",
+      "lat": 1.3678,
+      "lon": 103.9823,
+      "annual_avg_rainfall_mm": 2010.1
+    },
+    {
+      "station_code": "S25",
+      "station_name": "Seletar",
+      "region": "North-Central",
+      "lat": 1.4114,
+      "lon": 103.8627,
+      "annual_avg_rainfall_mm": 2549.3
+    },
+    {
+      "station_code": "S80",
+      "station_name": "Sembawang",
+      "region": "North",
+      "lat": 1.4247,
+      "lon": 103.8201,
+      "annual_avg_rainfall_mm": 2543.0
+    },
+    {
+      "station_code": "S23",
+      "station_name": "Tengah",
+      "region": "West",
+      "lat": 1.3858,
+      "lon": 103.7119,
+      "annual_avg_rainfall_mm": 2762.6
+    },
+    {
+      "station_code": "S06",
+      "station_name": "Paya Lebar",
+      "region": "Central-East",
+      "lat": 1.357,
+      "lon": 103.904,
+      "annual_avg_rainfall_mm": 2479.6
+    },
+    {
+      "station_code": "S50",
+      "station_name": "Clementi Road",
+      "region": "West-Central",
+      "lat": 1.3318,
+      "lon": 103.7762,
+      "annual_avg_rainfall_mm": 2599.9
+    },
+    {
+      "station_code": "S60",
+      "station_name": "Sentosa",
+      "region": "South",
+      "lat": 1.2504,
+      "lon": 103.8275,
+      "annual_avg_rainfall_mm": 2084.2
+    },
+    {
+      "station_code": "S44",
+      "station_name": "Nanyang Avenue (NTU)",
+      "region": "Far West",
+      "lat": 1.3458,
+      "lon": 103.6817,
+      "annual_avg_rainfall_mm": 2713.1
+    },
+    {
+      "station_code": "S109",
+      "station_name": "Ang Mo Kio Ave 5",
+      "region": "Central-North",
+      "lat": 1.3793,
+      "lon": 103.85,
+      "annual_avg_rainfall_mm": 2550.4
+    },
+    {
+      "station_code": "S104",
+      "station_name": "Woodlands Ave 9",
+      "region": "Far North",
+      "lat": 1.4439,
+      "lon": 103.7854,
+      "annual_avg_rainfall_mm": 2360.0
+    },
+    {
+      "station_code": "S29",
+      "station_name": "Pasir Ris Road",
+      "region": "North-East",
+      "lat": 1.3865,
+      "lon": 103.9413,
+      "annual_avg_rainfall_mm": 1670.2
+    },
+    {
+      "station_code": "S107",
+      "station_name": "East Coast Park",
+      "region": "South-East",
+      "lat": 1.3133,
+      "lon": 103.962,
+      "annual_avg_rainfall_mm": 1820.0
+    },
+    {
+      "station_code": "S115",
+      "station_name": "Tuas South Ave 3",
+      "region": "Far South-West",
+      "lat": 1.2938,
+      "lon": 103.6184,
+      "annual_avg_rainfall_mm": 2543.6
+    },
+    {
+      "station_code": "S31",
+      "station_name": "Kampong Bahru Road",
+      "region": "South-Central",
+      "lat": 1.2748,
+      "lon": 103.8282,
+      "annual_avg_rainfall_mm": 2114.0
+    },
+    {
+      "station_code": "S43",
+      "station_name": "Kim Chuan Road",
+      "region": "Central-East",
+      "lat": 1.3406,
+      "lon": 103.8882,
+      "annual_avg_rainfall_mm": 2425.3
+    },
+    {
+      "station_code": "S71",
+      "station_name": "Kent Ridge Road (NUS)",
+      "region": "South-West",
+      "lat": 1.2923,
+      "lon": 103.7815,
+      "annual_avg_rainfall_mm": 2533.1
+    },
+    {
+      "station_code": "S81",
+      "station_name": "Punggol Central",
+      "region": "North-East",
+      "lat": 1.4028,
+      "lon": 103.9095,
+      "annual_avg_rainfall_mm": 2352.0
+    },
+    {
+      "station_code": "S84",
+      "station_name": "Tampines Ave 5",
+      "region": "East",
+      "lat": 1.3443,
+      "lon": 103.9441,
+      "annual_avg_rainfall_mm": 2075.5
+    },
+    {
+      "station_code": "S88",
+      "station_name": "Toa Payoh North",
+      "region": "Central",
+      "lat": 1.3417,
+      "lon": 103.8515,
+      "annual_avg_rainfall_mm": 2535.2
+    },
+    {
+      "station_code": "S40",
+      "station_name": "Mandai Lake Road",
+      "region": "North-Central",
+      "lat": 1.4067,
+      "lon": 103.7832,
+      "annual_avg_rainfall_mm": 2677.0
+    }
+  ]
+}

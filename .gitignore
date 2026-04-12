@@ -1,14 +1,30 @@
-CLAUDE.md
+# Legacy / local-only assets
 dataset/
-dataset.zip
-q1/
-q2/
-q3/
 pre/
 slides/
-build_timeline_map.py
-timeline_map.html
-scripts/output/
+CLAUDE.md
+
+# POI cache (regenerable via data/raw/poi/download_poi.py)
+data/raw/poi/cache/
+
+# Python
 __pycache__/
 *.pyc
+
+# macOS
 .DS_Store
+
+# Temp debug screenshots
+*.png
+
+# Temp analysis scripts (root level)
+analyze_*.py
+find_*.py
+patch_*.py
+test_*.py
+
+# Playwright
+.playwright-cli/
+
+# README (auto-generated)
+README.md

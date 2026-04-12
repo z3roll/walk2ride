@@ -1,0 +1,241 @@
+station_code,station_name,region,lat,lon,month,avg_monthly_rainfall_mm,std_mm,n_years
+S24,Changi,East,1.3678,103.9823,1,243.8,208.8,10
+S24,Changi,East,1.3678,103.9823,2,103.6,104.3,10
+S24,Changi,East,1.3678,103.9823,3,120.3,70.9,10
+S24,Changi,East,1.3678,103.9823,4,175.5,76.5,10
+S24,Changi,East,1.3678,103.9823,5,161.8,68.9,10
+S24,Changi,East,1.3678,103.9823,6,173.4,58.2,10
+S24,Changi,East,1.3678,103.9823,7,119.7,59.0,10
+S24,Changi,East,1.3678,103.9823,8,128.1,73.9,10
+S24,Changi,East,1.3678,103.9823,9,120.5,49.3,10
+S24,Changi,East,1.3678,103.9823,10,158.1,65.3,10
+S24,Changi,East,1.3678,103.9823,11,241.4,98.0,10
+S24,Changi,East,1.3678,103.9823,12,263.9,88.9,10
+S25,Seletar,North-Central,1.4114,103.8627,1,241.5,172.8,10
+S25,Seletar,North-Central,1.4114,103.8627,2,122.3,92.8,10
+S25,Seletar,North-Central,1.4114,103.8627,3,193.5,109.0,10
+S25,Seletar,North-Central,1.4114,103.8627,4,218.9,75.6,10
+S25,Seletar,North-Central,1.4114,103.8627,5,209.0,67.2,10
+S25,Seletar,North-Central,1.4114,103.8627,6,219.9,73.4,10
+S25,Seletar,North-Central,1.4114,103.8627,7,140.5,69.2,10
+S25,Seletar,North-Central,1.4114,103.8627,8,143.0,76.5,10
+S25,Seletar,North-Central,1.4114,103.8627,9,216.6,52.0,10
+S25,Seletar,North-Central,1.4114,103.8627,10,199.5,107.9,10
+S25,Seletar,North-Central,1.4114,103.8627,11,333.7,128.9,10
+S25,Seletar,North-Central,1.4114,103.8627,12,310.9,111.2,10
+S80,Sembawang,North,1.4247,103.8201,1,255.5,140.8,10
+S80,Sembawang,North,1.4247,103.8201,2,132.1,93.6,10
+S80,Sembawang,North,1.4247,103.8201,3,215.2,108.7,10
+S80,Sembawang,North,1.4247,103.8201,4,223.5,55.9,10
+S80,Sembawang,North,1.4247,103.8201,5,208.1,59.0,10
+S80,Sembawang,North,1.4247,103.8201,6,176.7,73.2,10
+S80,Sembawang,North,1.4247,103.8201,7,137.3,48.2,10
+S80,Sembawang,North,1.4247,103.8201,8,174.3,128.1,10
+S80,Sembawang,North,1.4247,103.8201,9,218.9,86.2,10
+S80,Sembawang,North,1.4247,103.8201,10,198.3,78.1,10
+S80,Sembawang,North,1.4247,103.8201,11,355.6,127.5,10
+S80,Sembawang,North,1.4247,103.8201,12,247.6,115.4,10
+S23,Tengah,West,1.3858,103.7119,1,209.8,121.7,10
+S23,Tengah,West,1.3858,103.7119,2,152.5,90.2,10
+S23,Tengah,West,1.3858,103.7119,3,247.2,84.8,10
+S23,Tengah,West,1.3858,103.7119,4,258.5,76.2,10
+S23,Tengah,West,1.3858,103.7119,5,233.8,43.4,10
+S23,Tengah,West,1.3858,103.7119,6,282.2,68.4,10
+S23,Tengah,West,1.3858,103.7119,7,211.6,112.7,10
+S23,Tengah,West,1.3858,103.7119,8,198.1,130.9,10
+S23,Tengah,West,1.3858,103.7119,9,213.8,89.3,10
+S23,Tengah,West,1.3858,103.7119,10,232.6,112.2,10
+S23,Tengah,West,1.3858,103.7119,11,311.4,62.8,10
+S23,Tengah,West,1.3858,103.7119,12,211.2,47.4,10
+S06,Paya Lebar,Central-East,1.357,103.904,1,264.9,201.1,10
+S06,Paya Lebar,Central-East,1.357,103.904,2,142.9,111.4,10
+S06,Paya Lebar,Central-East,1.357,103.904,3,182.3,100.2,10
+S06,Paya Lebar,Central-East,1.357,103.904,4,220.9,65.0,10
+S06,Paya Lebar,Central-East,1.357,103.904,5,230.6,60.2,10
+S06,Paya Lebar,Central-East,1.357,103.904,6,201.0,95.1,10
+S06,Paya Lebar,Central-East,1.357,103.904,7,153.9,47.9,10
+S06,Paya Lebar,Central-East,1.357,103.904,8,148.9,110.4,10
+S06,Paya Lebar,Central-East,1.357,103.904,9,162.5,68.6,10
+S06,Paya Lebar,Central-East,1.357,103.904,10,174.1,74.7,10
+S06,Paya Lebar,Central-East,1.357,103.904,11,321.0,84.1,10
+S06,Paya Lebar,Central-East,1.357,103.904,12,276.5,76.5,10
+S50,Clementi Road,West-Central,1.3318,103.7762,1,222.0,107.3,10
+S50,Clementi Road,West-Central,1.3318,103.7762,2,132.7,113.5,10
+S50,Clementi Road,West-Central,1.3318,103.7762,3,184.4,94.1,10
+S50,Clementi Road,West-Central,1.3318,103.7762,4,255.4,67.5,10
+S50,Clementi Road,West-Central,1.3318,103.7762,5,211.1,43.4,10
+S50,Clementi Road,West-Central,1.3318,103.7762,6,250.9,136.7,10
+S50,Clementi Road,West-Central,1.3318,103.7762,7,166.4,104.4,10
+S50,Clementi Road,West-Central,1.3318,103.7762,8,160.0,129.6,10
+S50,Clementi Road,West-Central,1.3318,103.7762,9,225.5,96.2,10
+S50,Clementi Road,West-Central,1.3318,103.7762,10,215.7,98.6,10
+S50,Clementi Road,West-Central,1.3318,103.7762,11,316.8,67.7,10
+S50,Clementi Road,West-Central,1.3318,103.7762,12,259.0,61.8,10
+S60,Sentosa,South,1.2504,103.8275,1,156.1,51.1,10
+S60,Sentosa,South,1.2504,103.8275,2,112.9,113.4,10
+S60,Sentosa,South,1.2504,103.8275,3,147.9,110.5,10
+S60,Sentosa,South,1.2504,103.8275,4,216.1,87.0,10
+S60,Sentosa,South,1.2504,103.8275,5,154.8,70.2,10
+S60,Sentosa,South,1.2504,103.8275,6,180.1,72.9,10
+S60,Sentosa,South,1.2504,103.8275,7,153.1,99.9,10
+S60,Sentosa,South,1.2504,103.8275,8,151.7,98.5,10
+S60,Sentosa,South,1.2504,103.8275,9,172.4,66.5,10
+S60,Sentosa,South,1.2504,103.8275,10,191.5,105.0,10
+S60,Sentosa,South,1.2504,103.8275,11,209.1,93.1,10
+S60,Sentosa,South,1.2504,103.8275,12,238.5,84.0,9
+S44,Nanyang Avenue (NTU),Far West,1.3458,103.6817,1,201.7,103.8,10
+S44,Nanyang Avenue (NTU),Far West,1.3458,103.6817,2,155.9,85.7,10
+S44,Nanyang Avenue (NTU),Far West,1.3458,103.6817,3,217.1,82.2,10
+S44,Nanyang Avenue (NTU),Far West,1.3458,103.6817,4,249.4,89.9,10
+S44,Nanyang Avenue (NTU),Far West,1.3458,103.6817,5,277.7,100.4,10
+S44,Nanyang Avenue (NTU),Far West,1.3458,103.6817,6,269.1,98.8,10
+S44,Nanyang Avenue (NTU),Far West,1.3458,103.6817,7,151.9,103.1,10
+S44,Nanyang Avenue (NTU),Far West,1.3458,103.6817,8,199.5,130.4,10
+S44,Nanyang Avenue (NTU),Far West,1.3458,103.6817,9,229.3,93.1,10
+S44,Nanyang Avenue (NTU),Far West,1.3458,103.6817,10,232.0,100.9,10
+S44,Nanyang Avenue (NTU),Far West,1.3458,103.6817,11,270.2,80.1,10
+S44,Nanyang Avenue (NTU),Far West,1.3458,103.6817,12,259.4,112.5,10
+S109,Ang Mo Kio Ave 5,Central-North,1.3793,103.85,1,240.9,128.5,10
+S109,Ang Mo Kio Ave 5,Central-North,1.3793,103.85,2,132.6,74.7,10
+S109,Ang Mo Kio Ave 5,Central-North,1.3793,103.85,3,198.9,127.4,10
+S109,Ang Mo Kio Ave 5,Central-North,1.3793,103.85,4,280.2,55.9,10
+S109,Ang Mo Kio Ave 5,Central-North,1.3793,103.85,5,217.0,69.7,10
+S109,Ang Mo Kio Ave 5,Central-North,1.3793,103.85,6,175.8,60.4,10
+S109,Ang Mo Kio Ave 5,Central-North,1.3793,103.85,7,147.4,67.8,10
+S109,Ang Mo Kio Ave 5,Central-North,1.3793,103.85,8,149.8,96.3,10
+S109,Ang Mo Kio Ave 5,Central-North,1.3793,103.85,9,210.8,73.8,10
+S109,Ang Mo Kio Ave 5,Central-North,1.3793,103.85,10,201.2,77.5,10
+S109,Ang Mo Kio Ave 5,Central-North,1.3793,103.85,11,334.1,96.3,10
+S109,Ang Mo Kio Ave 5,Central-North,1.3793,103.85,12,261.7,84.1,10
+S104,Woodlands Ave 9,Far North,1.4439,103.7854,1,218.1,115.6,10
+S104,Woodlands Ave 9,Far North,1.4439,103.7854,2,144.1,97.5,10
+S104,Woodlands Ave 9,Far North,1.4439,103.7854,3,196.8,103.3,10
+S104,Woodlands Ave 9,Far North,1.4439,103.7854,4,221.0,57.0,10
+S104,Woodlands Ave 9,Far North,1.4439,103.7854,5,176.9,86.8,10
+S104,Woodlands Ave 9,Far North,1.4439,103.7854,6,163.5,98.0,10
+S104,Woodlands Ave 9,Far North,1.4439,103.7854,7,147.2,65.2,10
+S104,Woodlands Ave 9,Far North,1.4439,103.7854,8,157.2,110.1,10
+S104,Woodlands Ave 9,Far North,1.4439,103.7854,9,194.1,64.1,10
+S104,Woodlands Ave 9,Far North,1.4439,103.7854,10,190.8,81.0,10
+S104,Woodlands Ave 9,Far North,1.4439,103.7854,11,318.2,124.0,10
+S104,Woodlands Ave 9,Far North,1.4439,103.7854,12,231.9,129.0,10
+S29,Pasir Ris Road,North-East,1.3865,103.9413,1,158.7,133.0,10
+S29,Pasir Ris Road,North-East,1.3865,103.9413,2,117.9,105.3,10
+S29,Pasir Ris Road,North-East,1.3865,103.9413,3,117.7,95.0,10
+S29,Pasir Ris Road,North-East,1.3865,103.9413,4,145.4,71.3,10
+S29,Pasir Ris Road,North-East,1.3865,103.9413,5,147.6,90.6,10
+S29,Pasir Ris Road,North-East,1.3865,103.9413,6,133.7,79.0,10
+S29,Pasir Ris Road,North-East,1.3865,103.9413,7,86.2,58.2,10
+S29,Pasir Ris Road,North-East,1.3865,103.9413,8,76.6,62.8,10
+S29,Pasir Ris Road,North-East,1.3865,103.9413,9,98.6,89.8,10
+S29,Pasir Ris Road,North-East,1.3865,103.9413,10,148.2,125.1,9
+S29,Pasir Ris Road,North-East,1.3865,103.9413,11,218.9,152.5,10
+S29,Pasir Ris Road,North-East,1.3865,103.9413,12,220.5,117.6,10
+S107,East Coast Park,South-East,1.3133,103.962,1,187.2,154.8,10
+S107,East Coast Park,South-East,1.3133,103.962,2,118.1,119.0,10
+S107,East Coast Park,South-East,1.3133,103.962,3,102.8,85.2,10
+S107,East Coast Park,South-East,1.3133,103.962,4,181.2,78.8,10
+S107,East Coast Park,South-East,1.3133,103.962,5,132.4,54.8,10
+S107,East Coast Park,South-East,1.3133,103.962,6,145.2,92.9,10
+S107,East Coast Park,South-East,1.3133,103.962,7,102.6,61.3,10
+S107,East Coast Park,South-East,1.3133,103.962,8,134.1,77.0,10
+S107,East Coast Park,South-East,1.3133,103.962,9,124.5,59.1,10
+S107,East Coast Park,South-East,1.3133,103.962,10,122.3,66.2,10
+S107,East Coast Park,South-East,1.3133,103.962,11,244.9,116.0,10
+S107,East Coast Park,South-East,1.3133,103.962,12,224.7,69.1,10
+S115,Tuas South Ave 3,Far South-West,1.2938,103.6184,1,210.6,114.3,10
+S115,Tuas South Ave 3,Far South-West,1.2938,103.6184,2,139.1,78.9,10
+S115,Tuas South Ave 3,Far South-West,1.2938,103.6184,3,173.0,76.9,10
+S115,Tuas South Ave 3,Far South-West,1.2938,103.6184,4,208.9,98.7,10
+S115,Tuas South Ave 3,Far South-West,1.2938,103.6184,5,254.9,82.0,10
+S115,Tuas South Ave 3,Far South-West,1.2938,103.6184,6,238.1,89.8,10
+S115,Tuas South Ave 3,Far South-West,1.2938,103.6184,7,186.5,155.4,10
+S115,Tuas South Ave 3,Far South-West,1.2938,103.6184,8,149.5,76.1,10
+S115,Tuas South Ave 3,Far South-West,1.2938,103.6184,9,252.0,120.9,10
+S115,Tuas South Ave 3,Far South-West,1.2938,103.6184,10,206.5,91.7,10
+S115,Tuas South Ave 3,Far South-West,1.2938,103.6184,11,274.5,100.4,10
+S115,Tuas South Ave 3,Far South-West,1.2938,103.6184,12,249.9,110.5,10
+S31,Kampong Bahru Road,South-Central,1.2748,103.8282,1,143.3,83.9,2
+S31,Kampong Bahru Road,South-Central,1.2748,103.8282,2,112.7,103.1,2
+S31,Kampong Bahru Road,South-Central,1.2748,103.8282,3,153.2,95.4,2
+S31,Kampong Bahru Road,South-Central,1.2748,103.8282,4,191.8,48.4,2
+S31,Kampong Bahru Road,South-Central,1.2748,103.8282,5,166.9,16.8,2
+S31,Kampong Bahru Road,South-Central,1.2748,103.8282,6,214.3,132.8,2
+S31,Kampong Bahru Road,South-Central,1.2748,103.8282,7,154.6,127.6,2
+S31,Kampong Bahru Road,South-Central,1.2748,103.8282,8,156.5,73.1,2
+S31,Kampong Bahru Road,South-Central,1.2748,103.8282,9,146.5,98.9,2
+S31,Kampong Bahru Road,South-Central,1.2748,103.8282,10,152.2,93.6,2
+S31,Kampong Bahru Road,South-Central,1.2748,103.8282,11,181.2,,1
+S31,Kampong Bahru Road,South-Central,1.2748,103.8282,12,340.8,,1
+S43,Kim Chuan Road,Central-East,1.3406,103.8882,1,258.0,184.9,10
+S43,Kim Chuan Road,Central-East,1.3406,103.8882,2,130.7,106.0,10
+S43,Kim Chuan Road,Central-East,1.3406,103.8882,3,193.1,109.3,10
+S43,Kim Chuan Road,Central-East,1.3406,103.8882,4,219.2,71.3,10
+S43,Kim Chuan Road,Central-East,1.3406,103.8882,5,211.0,51.8,10
+S43,Kim Chuan Road,Central-East,1.3406,103.8882,6,198.8,85.4,10
+S43,Kim Chuan Road,Central-East,1.3406,103.8882,7,159.4,80.1,10
+S43,Kim Chuan Road,Central-East,1.3406,103.8882,8,150.0,117.3,10
+S43,Kim Chuan Road,Central-East,1.3406,103.8882,9,157.1,70.6,10
+S43,Kim Chuan Road,Central-East,1.3406,103.8882,10,175.9,68.5,10
+S43,Kim Chuan Road,Central-East,1.3406,103.8882,11,305.2,91.8,10
+S43,Kim Chuan Road,Central-East,1.3406,103.8882,12,266.9,70.2,10
+S71,Kent Ridge Road (NUS),South-West,1.2923,103.7815,1,204.0,103.1,10
+S71,Kent Ridge Road (NUS),South-West,1.2923,103.7815,2,135.1,137.3,10
+S71,Kent Ridge Road (NUS),South-West,1.2923,103.7815,3,185.3,120.8,10
+S71,Kent Ridge Road (NUS),South-West,1.2923,103.7815,4,259.8,129.3,10
+S71,Kent Ridge Road (NUS),South-West,1.2923,103.7815,5,194.2,90.7,10
+S71,Kent Ridge Road (NUS),South-West,1.2923,103.7815,6,242.0,75.3,10
+S71,Kent Ridge Road (NUS),South-West,1.2923,103.7815,7,168.6,128.0,10
+S71,Kent Ridge Road (NUS),South-West,1.2923,103.7815,8,155.2,95.6,10
+S71,Kent Ridge Road (NUS),South-West,1.2923,103.7815,9,226.0,93.0,10
+S71,Kent Ridge Road (NUS),South-West,1.2923,103.7815,10,233.8,167.3,10
+S71,Kent Ridge Road (NUS),South-West,1.2923,103.7815,11,290.7,60.1,10
+S71,Kent Ridge Road (NUS),South-West,1.2923,103.7815,12,238.4,97.2,10
+S81,Punggol Central,North-East,1.4028,103.9095,1,238.9,179.2,10
+S81,Punggol Central,North-East,1.4028,103.9095,2,122.4,95.6,10
+S81,Punggol Central,North-East,1.4028,103.9095,3,158.9,97.6,10
+S81,Punggol Central,North-East,1.4028,103.9095,4,229.3,84.6,10
+S81,Punggol Central,North-East,1.4028,103.9095,5,205.1,62.9,10
+S81,Punggol Central,North-East,1.4028,103.9095,6,213.3,91.1,10
+S81,Punggol Central,North-East,1.4028,103.9095,7,142.5,61.4,10
+S81,Punggol Central,North-East,1.4028,103.9095,8,144.9,72.2,10
+S81,Punggol Central,North-East,1.4028,103.9095,9,165.0,50.4,10
+S81,Punggol Central,North-East,1.4028,103.9095,10,187.8,113.3,10
+S81,Punggol Central,North-East,1.4028,103.9095,11,280.5,76.3,10
+S81,Punggol Central,North-East,1.4028,103.9095,12,263.3,95.1,10
+S84,Tampines Ave 5,East,1.3443,103.9441,1,230.8,206.8,10
+S84,Tampines Ave 5,East,1.3443,103.9441,2,119.0,122.9,10
+S84,Tampines Ave 5,East,1.3443,103.9441,3,123.7,109.6,10
+S84,Tampines Ave 5,East,1.3443,103.9441,4,169.2,104.4,10
+S84,Tampines Ave 5,East,1.3443,103.9441,5,161.5,78.0,10
+S84,Tampines Ave 5,East,1.3443,103.9441,6,148.4,103.2,10
+S84,Tampines Ave 5,East,1.3443,103.9441,7,104.7,65.4,9
+S84,Tampines Ave 5,East,1.3443,103.9441,8,157.3,111.7,9
+S84,Tampines Ave 5,East,1.3443,103.9441,9,143.6,80.5,9
+S84,Tampines Ave 5,East,1.3443,103.9441,10,157.5,81.6,10
+S84,Tampines Ave 5,East,1.3443,103.9441,11,299.3,99.9,10
+S84,Tampines Ave 5,East,1.3443,103.9441,12,260.4,93.6,10
+S88,Toa Payoh North,Central,1.3417,103.8515,1,260.0,153.2,10
+S88,Toa Payoh North,Central,1.3417,103.8515,2,123.7,76.4,10
+S88,Toa Payoh North,Central,1.3417,103.8515,3,203.3,101.8,10
+S88,Toa Payoh North,Central,1.3417,103.8515,4,236.5,52.6,10
+S88,Toa Payoh North,Central,1.3417,103.8515,5,227.9,67.7,10
+S88,Toa Payoh North,Central,1.3417,103.8515,6,200.2,93.0,10
+S88,Toa Payoh North,Central,1.3417,103.8515,7,154.6,81.4,10
+S88,Toa Payoh North,Central,1.3417,103.8515,8,150.8,116.4,10
+S88,Toa Payoh North,Central,1.3417,103.8515,9,187.3,67.4,10
+S88,Toa Payoh North,Central,1.3417,103.8515,10,185.7,86.0,10
+S88,Toa Payoh North,Central,1.3417,103.8515,11,319.9,84.3,10
+S88,Toa Payoh North,Central,1.3417,103.8515,12,285.4,86.3,10
+S40,Mandai Lake Road,North-Central,1.4067,103.7832,1,242.0,125.2,10
+S40,Mandai Lake Road,North-Central,1.4067,103.7832,2,136.1,81.0,10
+S40,Mandai Lake Road,North-Central,1.4067,103.7832,3,213.4,92.7,10
+S40,Mandai Lake Road,North-Central,1.4067,103.7832,4,246.4,100.7,10
+S40,Mandai Lake Road,North-Central,1.4067,103.7832,5,220.1,56.8,10
+S40,Mandai Lake Road,North-Central,1.4067,103.7832,6,209.3,64.8,10
+S40,Mandai Lake Road,North-Central,1.4067,103.7832,7,169.9,55.9,10
+S40,Mandai Lake Road,North-Central,1.4067,103.7832,8,185.6,163.1,10
+S40,Mandai Lake Road,North-Central,1.4067,103.7832,9,203.3,90.4,10
+S40,Mandai Lake Road,North-Central,1.4067,103.7832,10,225.4,88.8,10
+S40,Mandai Lake Road,North-Central,1.4067,103.7832,11,352.0,110.0,10
+S40,Mandai Lake Road,North-Central,1.4067,103.7832,12,273.5,87.8,10
