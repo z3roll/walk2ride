@@ -4,6 +4,13 @@ pre/
 slides/
 CLAUDE.md
 
+# Unused data files (kept locally for scripts, not needed by frontend)
+data/area_all_linkways.json
+data/area_chart1.json
+data/hdb_buildings.json
+data/hdb_shelter_400m.json
+data/station_buffer.json
+
 # POI cache (regenerable via data/raw/poi/download_poi.py)
 data/raw/poi/cache/
 

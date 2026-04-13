@@ -56,19 +56,19 @@ function shelterColor(ratio) {
 
 async function loadData() {
   const [stationsResp, detailsResp, servicesResp, regionsResp, rq3Resp, analysisResp, blocksResp, chart1Resp, chart1DetailResp, chart2Resp, hdbLwResp, rq3AgeResp, rq3AreasResp] = await Promise.all([
-    fetch('data/stations.json'),
-    fetch('data/details.json'),
-    fetch('data/services_shelter.json'),
-    fetch('data/regions.geojson'),
-    fetch('data/rq3_planning_areas.json?v=2'),
-    fetch('data/analysis.json?v=4'),
-    fetch('data/area_blocks.json?v=1'),
-    fetch('data/area_chart1_400m.json?v=2'),
-    fetch('data/area_chart1_detail.json?v=1'),
-    fetch('data/area_chart2_400m.json?v=1'),
-    fetch('data/hdb_linkway_length_200m.json?v=1'),
-    fetch('data/rq3_age_hdb.json?v=1'),
-    fetch('data/rq3_planning_areas.json')
+    fetch('data/common/stations.json'),
+    fetch('data/common/details.json'),
+    fetch('data/q1/services_shelter.json'),
+    fetch('data/common/regions.geojson'),
+    fetch('data/q3/rq3_planning_areas.json?v=2'),
+    fetch('data/common/analysis.json?v=4'),
+    fetch('data/q2/area_blocks.json?v=1'),
+    fetch('data/q2/area_chart1_400m.json?v=2'),
+    fetch('data/q2/area_chart1_detail.json?v=1'),
+    fetch('data/q2/area_chart2_400m.json?v=1'),
+    fetch('data/q2/hdb_linkway_length_200m.json?v=1'),
+    fetch('data/q3/rq3_age_hdb.json?v=1'),
+    fetch('data/q3/rq3_planning_areas.json')
   ]);
   DATA = await stationsResp.json();
   Object.assign(DETAILS, await detailsResp.json());
@@ -97,7 +97,7 @@ async function loadData() {
   // Build per-area raw single-year age lookup from respopagesex CSV
   // (loaded inline via a small fetch so q3 can compute custom age ranges)
   try {
-    const popResp = await fetch('data/raw/respopagesex2025.csv');
+    const popResp = await fetch('data/common/raw/respopagesex2025.csv');
     const popText = await popResp.text();
     const rawAge = {};
     popText.split('\n').slice(1).forEach(line => {
@@ -120,7 +120,7 @@ async function loadData() {
 window.AREA_INFRA = null;
 async function loadAreaInfra() {
   if (window.AREA_INFRA && window.AREA_INFRA._hdb_polygons) return window.AREA_INFRA;
-  const resp = await fetch('data/area_infra.json?v=2');
+  const resp = await fetch('data/common/area_infra.json?v=2');
   window.AREA_INFRA = await resp.json();
   return window.AREA_INFRA;
 }
