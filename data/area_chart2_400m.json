@@ -2,7 +2,7 @@
   {
     "name": "SENGKANG",
     "n_hdb_400m": 534,
-    "lw_length_m": 13194.4,
+    "lw_length_m": 12502.9,
     "year_mean": 2005.1,
     "year_buckets": {
       "pre1980": 0,
@@ -20,7 +20,7 @@
   {
     "name": "BUKIT PANJANG",
     "n_hdb_400m": 300,
-    "lw_length_m": 11031.9,
+    "lw_length_m": 8481.2,
     "year_mean": 1995.9,
     "year_buckets": {
       "pre1980": 0,
@@ -31,14 +31,14 @@
       "d2020s": 11
     },
     "n_hdb_full": 346,
-    "lw_length_full": 10082.3,
+    "lw_length_full": 10082.2,
     "year_mean_full": 1995.8,
     "total_pop": 136840
   },
   {
     "name": "GEYLANG",
     "n_hdb_400m": 180,
-    "lw_length_m": 10126.4,
+    "lw_length_m": 9091.8,
     "year_mean": 1983.0,
     "year_buckets": {
       "pre1980": 107,
@@ -56,7 +56,7 @@
   {
     "name": "CHOA CHU KANG",
     "n_hdb_400m": 217,
-    "lw_length_m": 9263.3,
+    "lw_length_m": 8910.5,
     "year_mean": 1993.0,
     "year_buckets": {
       "pre1980": 10,
@@ -85,14 +85,14 @@
       "d2020s": 11
     },
     "n_hdb_full": 918,
-    "lw_length_full": 12668.8,
+    "lw_length_full": 12668.7,
     "year_mean_full": 1995.0,
     "total_pop": 290800
   },
   {
     "name": "TOA PAYOH",
     "n_hdb_400m": 162,
-    "lw_length_m": 7182.7,
+    "lw_length_m": 6555.2,
     "year_mean": 1988.9,
     "year_buckets": {
       "pre1980": 74,
@@ -110,7 +110,7 @@
   {
     "name": "QUEENSTOWN",
     "n_hdb_400m": 88,
-    "lw_length_m": 7007.3,
+    "lw_length_m": 6590.4,
     "year_mean": 1972.8,
     "year_buckets": {
       "pre1980": 69,
@@ -139,14 +139,14 @@
       "d2020s": 3
     },
     "n_hdb_full": 532,
-    "lw_length_full": 10024.9,
+    "lw_length_full": 10022.8,
     "year_mean_full": 1984.2,
     "total_pop": 274940
   },
   {
     "name": "JURONG WEST",
     "n_hdb_400m": 106,
-    "lw_length_m": 6814.0,
+    "lw_length_m": 6813.9,
     "year_mean": 1999.0,
     "year_buckets": {
       "pre1980": 0,
@@ -157,14 +157,14 @@
       "d2020s": 0
     },
     "n_hdb_full": 750,
-    "lw_length_full": 10053.9,
+    "lw_length_full": 10053.8,
     "year_mean_full": 1993.5,
     "total_pop": 254310
   },
   {
     "name": "KALLANG",
     "n_hdb_400m": 128,
-    "lw_length_m": 6470.6,
+    "lw_length_m": 6319.2,
     "year_mean": 1983.3,
     "year_buckets": {
       "pre1980": 63,
@@ -182,7 +182,7 @@
   {
     "name": "BUKIT MERAH",
     "n_hdb_400m": 123,
-    "lw_length_m": 6397.3,
+    "lw_length_m": 6299.5,
     "year_mean": 1965.2,
     "year_buckets": {
       "pre1980": 88,
@@ -193,7 +193,7 @@
       "d2020s": 0
     },
     "n_hdb_full": 485,
-    "lw_length_full": 10644.9,
+    "lw_length_full": 10641.7,
     "year_mean_full": 1967.4,
     "total_pop": 147690
   },
@@ -211,14 +211,14 @@
       "d2020s": 3
     },
     "n_hdb_full": 736,
-    "lw_length_full": 9972.8,
+    "lw_length_full": 9970.1,
     "year_mean_full": 1995.6,
     "total_pop": 254940
   },
   {
     "name": "BUKIT TIMAH",
     "n_hdb_400m": 19,
-    "lw_length_m": 5699.2,
+    "lw_length_m": 4868.0,
     "year_mean": 1977.8,
     "year_buckets": {
       "pre1980": 14,
@@ -229,14 +229,14 @@
       "d2020s": 0
     },
     "n_hdb_full": 26,
-    "lw_length_full": 7895.0,
+    "lw_length_full": 7885.0,
     "year_mean_full": 1982.3,
     "total_pop": 86670
   },
   {
     "name": "BUKIT BATOK",
     "n_hdb_400m": 79,
-    "lw_length_m": 4624.0,
+    "lw_length_m": 4490.2,
     "year_mean": 1986.7,
     "year_buckets": {
       "pre1980": 0,
@@ -290,7 +290,7 @@
   {
     "name": "ROCHOR",
     "n_hdb_400m": 14,
-    "lw_length_m": 4404.3,
+    "lw_length_m": 2424.4,
     "year_mean": 1975.1,
     "year_buckets": {
       "pre1980": 8,
@@ -452,7 +452,7 @@
   {
     "name": "MARINE PARADE",
     "n_hdb_400m": 48,
-    "lw_length_m": 1056.5,
+    "lw_length_m": 819.2,
     "year_mean": 1974.9,
     "year_buckets": {
       "pre1980": 47,

@@ -3,9 +3,9 @@
     {
       "name": "SENGKANG",
       "n_stations": 16,
-      "n_hdb_400m": 534,
-      "n_lw_400m": 408,
-      "lw_length_m": 13194.4
+      "n_hdb_400m": 529,
+      "n_lw_400m": 398,
+      "lw_length_m": 12502.9
     },
     {
       "name": "PUNGGOL",
@@ -17,16 +17,16 @@
     {
       "name": "BUKIT PANJANG",
       "n_stations": 11,
-      "n_hdb_400m": 300,
-      "n_lw_400m": 361,
-      "lw_length_m": 11031.8
+      "n_hdb_400m": 295,
+      "n_lw_400m": 291,
+      "lw_length_m": 8481.2
     },
     {
       "name": "CHOA CHU KANG",
       "n_stations": 7,
       "n_hdb_400m": 217,
-      "n_lw_400m": 287,
-      "lw_length_m": 9263.3
+      "n_lw_400m": 273,
+      "lw_length_m": 8910.5
     },
     {
       "name": "TAMPINES",
@@ -38,9 +38,9 @@
     {
       "name": "GEYLANG",
       "n_stations": 8,
-      "n_hdb_400m": 180,
-      "n_lw_400m": 329,
-      "lw_length_m": 10126.4
+      "n_hdb_400m": 176,
+      "n_lw_400m": 300,
+      "lw_length_m": 9091.8
     },
     {
       "name": "WOODLANDS",
@@ -53,22 +53,22 @@
       "name": "TOA PAYOH",
       "n_stations": 7,
       "n_hdb_400m": 162,
-      "n_lw_400m": 239,
-      "lw_length_m": 7182.7
+      "n_lw_400m": 211,
+      "lw_length_m": 6555.2
     },
     {
       "name": "KALLANG",
       "n_stations": 8,
       "n_hdb_400m": 128,
-      "n_lw_400m": 217,
-      "lw_length_m": 6468.8
+      "n_lw_400m": 211,
+      "lw_length_m": 6319.2
     },
     {
       "name": "BUKIT MERAH",
       "n_stations": 6,
-      "n_hdb_400m": 123,
-      "n_lw_400m": 182,
-      "lw_length_m": 6397.3
+      "n_hdb_400m": 120,
+      "n_lw_400m": 176,
+      "lw_length_m": 6299.5
     },
     {
       "name": "YISHUN",
@@ -109,15 +109,15 @@
       "name": "QUEENSTOWN",
       "n_stations": 8,
       "n_hdb_400m": 88,
-      "n_lw_400m": 186,
-      "lw_length_m": 7007.3
+      "n_lw_400m": 183,
+      "lw_length_m": 6590.4
     },
     {
       "name": "BUKIT BATOK",
       "n_stations": 3,
       "n_hdb_400m": 79,
-      "n_lw_400m": 162,
-      "lw_length_m": 4624.0
+      "n_lw_400m": 160,
+      "lw_length_m": 4490.2
     },
     {
       "name": "SERANGOON",
@@ -129,9 +129,9 @@
     {
       "name": "MARINE PARADE",
       "n_stations": 4,
-      "n_hdb_400m": 48,
-      "n_lw_400m": 31,
-      "lw_length_m": 1056.5
+      "n_hdb_400m": 46,
+      "n_lw_400m": 24,
+      "lw_length_m": 819.2
     },
     {
       "name": "HOUGANG",
@@ -164,9 +164,9 @@
     {
       "name": "BUKIT TIMAH",
       "n_stations": 6,
-      "n_hdb_400m": 19,
-      "n_lw_400m": 186,
-      "lw_length_m": 5699.2
+      "n_hdb_400m": 15,
+      "n_lw_400m": 166,
+      "lw_length_m": 4868.0
     },
     {
       "name": "JURONG EAST",
@@ -174,27 +174,6 @@
       "n_hdb_400m": 15,
       "n_lw_400m": 75,
       "lw_length_m": 3873.9
-    },
-    {
-      "name": "ROCHOR",
-      "n_stations": 5,
-      "n_hdb_400m": 14,
-      "n_lw_400m": 163,
-      "lw_length_m": 4402.5
-    },
-    {
-      "name": "OUTRAM",
-      "n_stations": 4,
-      "n_hdb_400m": 4,
-      "n_lw_400m": 53,
-      "lw_length_m": 2295.2
-    },
-    {
-      "name": "MUSEUM",
-      "n_stations": 2,
-      "n_hdb_400m": 2,
-      "n_lw_400m": 26,
-      "lw_length_m": 628.5
     },
     {
       "name": "CHANGI",
@@ -207,8 +186,8 @@
       "name": "DOWNTOWN CORE",
       "n_stations": 11,
       "n_hdb_400m": 0,
-      "n_lw_400m": 83,
-      "lw_length_m": 3946.5
+      "n_lw_400m": 57,
+      "lw_length_m": 3005.8
     },
     {
       "name": "MARINA EAST",
@@ -225,11 +204,18 @@
       "lw_length_m": 0.0
     },
     {
+      "name": "MUSEUM",
+      "n_stations": 2,
+      "n_hdb_400m": 0,
+      "n_lw_400m": 7,
+      "lw_length_m": 141.0
+    },
+    {
       "name": "NEWTON",
       "n_stations": 1,
       "n_hdb_400m": 0,
-      "n_lw_400m": 38,
-      "lw_length_m": 961.7
+      "n_lw_400m": 4,
+      "lw_length_m": 236.6
     },
     {
       "name": "NOVENA",
@@ -242,29 +228,43 @@
       "name": "ORCHARD",
       "n_stations": 1,
       "n_hdb_400m": 0,
-      "n_lw_400m": 36,
-      "lw_length_m": 1699.7
+      "n_lw_400m": 24,
+      "lw_length_m": 1217.7
+    },
+    {
+      "name": "OUTRAM",
+      "n_stations": 4,
+      "n_hdb_400m": 0,
+      "n_lw_400m": 27,
+      "lw_length_m": 1340.8
     },
     {
       "name": "PIONEER",
       "n_stations": 2,
       "n_hdb_400m": 0,
-      "n_lw_400m": 33,
-      "lw_length_m": 1432.7
+      "n_lw_400m": 18,
+      "lw_length_m": 811.2
     },
     {
       "name": "RIVER VALLEY",
       "n_stations": 3,
       "n_hdb_400m": 0,
-      "n_lw_400m": 17,
-      "lw_length_m": 538.5
+      "n_lw_400m": 3,
+      "lw_length_m": 70.5
+    },
+    {
+      "name": "ROCHOR",
+      "n_stations": 5,
+      "n_hdb_400m": 0,
+      "n_lw_400m": 100,
+      "lw_length_m": 2424.4
     },
     {
       "name": "SINGAPORE RIVER",
       "n_stations": 2,
       "n_hdb_400m": 0,
-      "n_lw_400m": 48,
-      "lw_length_m": 977.5
+      "n_lw_400m": 21,
+      "lw_length_m": 488.3
     },
     {
       "name": "STRAITS VIEW",
@@ -284,8 +284,8 @@
       "name": "TANGLIN",
       "n_stations": 3,
       "n_hdb_400m": 0,
-      "n_lw_400m": 60,
-      "lw_length_m": 2295.6
+      "n_lw_400m": 31,
+      "lw_length_m": 1025.1
     },
     {
       "name": "TUAS",
@@ -295,7 +295,7 @@
       "lw_length_m": 0.0
     }
   ],
-  "pearson_r": 0.6651,
-  "n_areas_filtered": 26,
+  "pearson_r": 0.6643,
+  "n_areas_filtered": 25,
   "filter": "n_hdb_400m >= 5 and lw_length_m > 0"
 }

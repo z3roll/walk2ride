@@ -180,16 +180,25 @@ function renderQ2HdbScatter() {
         const a = p.data._raw;
         const disp = a.name.charAt(0) + a.name.slice(1).toLowerCase();
         const yrTxt = a.year_mean ? `<span style="color:#888;">HDB mean year:</span> <b>${a.year_mean.toFixed(1)}</b><br/>` : '';
+        // Full-area data from AREA_CHART2
+        const c2 = (window.AREA_CHART2 || []).find(x => x.name === a.name);
+        const hdbFull = c2 ? (c2.n_hdb_full || c2.n_hdb_400m) : '—';
+        const lwFull = c2 ? (c2.lw_length_full || c2.lw_length_m) : 0;
         return `<b style="font-size:13px;">${disp}</b><br/>
-          <span style="color:#888;">Residential HDB (400m):</span> <b>${a.n_hdb_400m}</b><br/>
-          <span style="color:#888;">Covered Linkway length:</span> <b>${(a.lw_length_m/1000).toFixed(2)} km</b>
-          <span style="color:#666;">(${a.n_lw_400m} segments)</span><br/>
-          <span style="color:#888;">Stations in area:</span> <b>${a.n_stations}</b><br/>
-          ${yrTxt}`;
+          ${yrTxt}
+          <span style="color:#888;">Stations:</span> <b>${a.n_stations}</b><br/>
+          <div style="margin-top:4px;border-top:1px solid #333;padding-top:4px;">
+          <span style="color:#aaa;font-weight:600;">Within 400m of MRT/LRT</span><br/>
+          <span style="color:#888;">HDB:</span> <b>${a.n_hdb_400m}</b>
+          <span style="color:#888;margin-left:8px;">Linkway:</span> <b>${(a.lw_length_m/1000).toFixed(2)} km</b> <span style="color:#666;">(${a.n_lw_400m} seg)</span></div>
+          <div style="margin-top:4px;border-top:1px solid #333;padding-top:4px;">
+          <span style="color:#aaa;font-weight:600;">Full area</span><br/>
+          <span style="color:#888;">HDB:</span> <b>${hdbFull}</b>
+          <span style="color:#888;margin-left:8px;">Linkway:</span> <b>${(lwFull/1000).toFixed(2)} km</b></div>`;
       },
     },
     xAxis: {
-      name: 'Number of Residential HDBs',
+      name: 'Number of Residential HDBs (within 400m of MRT/LRT)',
       nameLocation: 'middle',
       nameGap: 30,
       nameTextStyle: { fontSize: 11, color: '#888' },
@@ -199,7 +208,7 @@ function renderQ2HdbScatter() {
       axisLine: { lineStyle: { color: '#2a2f3a' } },
     },
     yAxis: {
-      name: 'Covered Linkway Length (m)',
+      name: 'Covered Linkway Length within 400m (m)',
       nameLocation: 'middle',
       nameGap: 48,
       nameTextStyle: { fontSize: 11, color: '#888' },
@@ -274,12 +283,16 @@ function renderQ2Timeline() {
   const fmtArea = a => a.name.charAt(0) + a.name.slice(1).toLowerCase();
   const categories = areas.map(fmtArea);
 
-  // Full-area metrics
+  // Per-HDB: 400m linkway / 400m HDB (station-area scope)
+  const chart1 = window.AREA_CHART1 || {};
   const perHdbArr = areas.map(a => {
+    const c1 = chart1[a.name];
+    if (c1 && c1.n_hdb_400m > 0) return +(c1.lw_length_m / c1.n_hdb_400m).toFixed(1);
     const h = a.n_hdb_full || a.n_hdb_400m;
     const l = a.lw_length_full || a.lw_length_m;
     return +(l / h).toFixed(1);
   });
+  // Per-1k residents: full-area linkway / full-area population
   const perKArr = areas.map(a => {
     const l = a.lw_length_full || a.lw_length_m;
     const p = a.total_pop || 0;
@@ -351,16 +364,27 @@ function renderQ2Timeline() {
         if (!params || !params.length) return '';
         const idx = params[0].dataIndex;
         const a = areas[idx];
-        const h = a.n_hdb_full || a.n_hdb_400m;
-        const l = a.lw_length_full || a.lw_length_m;
+        const c1 = chart1[a.name];
+        // 400m scope for per-HDB
+        const h400 = c1 ? c1.n_hdb_400m : 0;
+        const l400 = c1 ? c1.lw_length_m : 0;
+        // Full-area scope for per-resident
+        const lFull = a.lw_length_full || a.lw_length_m;
         const p = a.total_pop || 0;
+        const hFull = a.n_hdb_full || a.n_hdb_400m;
         return `<b style="font-size:13px;">${fmtArea(a)}</b><br/>
-          <span style="color:#888;">Mean HDB year:</span> <b>${a.year_mean.toFixed(0)}</b><br/>
-          <span style="color:#888;">HDB blocks:</span> <b>${h}</b><br/>
-          <span style="color:#888;">Linkway:</span> <b>${(l/1000).toFixed(2)} km</b><br/>
-          <span style="color:#888;">Population:</span> <b>${p.toLocaleString()}</b><br/>
-          <span style="color:#888;">Per HDB:</span> <b style="color:#ffcc80;">${(l/h).toFixed(1)} m</b><br/>
-          <span style="color:#888;">Per 1,000 residents:</span> <b style="color:#fdd835;">${p > 0 ? (l/(p/1000)).toFixed(1) : '—'} m</b>`;
+          <span style="color:#888;">Mean HDB year:</span> <b>${a.year_mean.toFixed(0)}</b>
+          <span style="color:#888;margin-left:8px;">Population:</span> <b>${p.toLocaleString()}</b>
+          <div style="margin-top:4px;border-top:1px solid #333;padding-top:4px;">
+          <span style="color:#aaa;font-weight:600;">Within 400m of MRT/LRT</span><br/>
+          <span style="color:#888;">HDB:</span> <b>${h400}</b>
+          <span style="color:#888;margin-left:8px;">Linkway:</span> <b>${(l400/1000).toFixed(2)} km</b><br/>
+          <span style="color:#888;">Per HDB:</span> <b style="color:#ffcc80;">${h400 > 0 ? (l400/h400).toFixed(1) : '—'} m</b></div>
+          <div style="margin-top:4px;border-top:1px solid #333;padding-top:4px;">
+          <span style="color:#aaa;font-weight:600;">Full area</span><br/>
+          <span style="color:#888;">HDB:</span> <b>${hFull}</b>
+          <span style="color:#888;margin-left:8px;">Linkway:</span> <b>${(lFull/1000).toFixed(2)} km</b><br/>
+          <span style="color:#888;">Per 1k residents:</span> <b style="color:#fdd835;">${p > 0 ? (lFull/(p/1000)).toFixed(1) : '—'} m</b></div>`;
       },
     },
     xAxis: {

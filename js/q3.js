@@ -207,9 +207,14 @@ function renderQ3CommuterRose() {
   const el = document.getElementById('q3-chart2');
   if (!el) return;
 
+  const chart2 = window.AREA_CHART2 || [];
   const blocks = window.AREA_BLOCKS || {};
-  const rawAge = window._q3RawAge || {}; // Need this to compute 15-50 exact range
-  
+  const rawAge = window._q3RawAge || {};
+
+  // Build name → full-area linkway length (m) from AREA_CHART2
+  const lwByArea = {};
+  chart2.forEach(a => { lwByArea[a.name] = a.lw_length_full || a.lw_length_m || 0; });
+
   if (!Object.keys(blocks).length || !Object.keys(rawAge).length) return;
 
   let areas = [];
@@ -217,20 +222,20 @@ function renderQ3CommuterRose() {
     if (b && b.n_hdb_total >= 5 && b.year_median) {
       const name = b.name.toUpperCase();
       const ageData = rawAge[name];
-      if (ageData) {
-        // Calculate exact 15-50 population
+      const lwLen = lwByArea[name] || 0;
+      if (ageData && lwLen > 0) {
         let commuters = 0;
         for (let age = 15; age <= 50; age++) {
           if (ageData[age]) commuters += ageData[age];
         }
-        
-        if (commuters > 20000) { 
-          const lw_per_1k = b.n_total_blocks / (commuters / 1000);
+
+        if (commuters > 20000) {
+          const lw_per_1k = lwLen / (commuters / 1000);
           areas.push({
             name: b.name,
             year_median: b.year_median,
             commuters: commuters,
-            total_lw: b.n_total_blocks,
+            total_lw: lwLen,
             lw_per_1k: lw_per_1k
           });
         }
@@ -322,7 +327,7 @@ function renderQ3CommuterRose() {
         <div style="font-size: 10px; color: #888; margin-top: 3px;">${subNames}</div>
         <div style="font-size: 10px; color: #aaa; margin-top: 2px;">HDB built ${a.year_range}</div>
         <div style="font-size: 13px; margin-top: 8px; color: #ddd;"><strong>${Math.round(a.commuters / 1000)}k</strong> commuters (25–50)</div>
-        <div style="font-size: 15px; margin-top: 4px; font-weight: 700; color: #fff;">${a.lw_per_1k.toFixed(2)} <span style="font-size:11px;color:#888;">linkway / 1k</span></div>
+        <div style="font-size: 15px; margin-top: 4px; font-weight: 700; color: #fff;">${a.lw_per_1k.toFixed(1)} <span style="font-size:11px;color:#888;">m / 1k commuters</span></div>
       </div>
     `;
 
@@ -423,9 +428,9 @@ function renderQ3Sidebar() {
 
     <div class="narrative">
       <div class="section-tag"><div class="dot" style="background:#ef5350;"></div>Chart 2 — The coverage gap in human terms</div>
-      Each person icon represents working-age commuters (25–50); the umbrella shows how much covered linkway each 1,000 of them share — for shelter from both rain and sun.
-      Old HDB (green) have a smaller commuter base under a wide umbrella (<strong>3.85 / 1k</strong>).
-      New HDB (red) pack the largest crowd yet get the smallest umbrella (<strong>2.00 / 1k</strong>).
+      Each person icon represents working-age commuters (25–50); the umbrella shows how many metres of covered linkway each 1,000 of them share — for shelter from both rain and sun.
+      Old HDB (green) have a smaller commuter base under a wide umbrella (<strong>221 m / 1k</strong>).
+      New HDB (red) pack the largest crowd yet get the smallest umbrella (<strong>66 m / 1k</strong>).
       From left to right the population grows while the umbrella shrinks — that asymmetry is the gap.
     </div>
 
@@ -433,7 +438,7 @@ function renderQ3Sidebar() {
       <strong>Finding:</strong>
       The current linkway network disproportionately benefits residents of older, less populated estates.
       Younger workers and their families — the core Walk2Ride demographic — live in the newest, densest towns
-      but receive roughly <strong>half the per-capita covered linkway</strong> of established neighbourhoods.
+      but receive roughly <strong>one-third the per-capita covered linkway</strong> of established neighbourhoods.
       Covered linkways protect against both rain and tropical sun; the people who need that protection most,
       on their daily commute to MRT, are the ones getting the least of it.
     </div>

@@ -139,12 +139,19 @@ def main() -> None:
     lw["cline_m"] = lw.geometry.apply(centerline_length)
     lw_rp = lw.geometry.representative_point()
 
+    # Index planning-area polygons by name for clipping
+    pa_poly = dict(zip(polys["PLN_AREA_N"], polys.geometry))
+
     rows = []
     for pa_name, group in sta_joined.groupby("PLN_AREA_N"):
         sta_in_area = group[group["name"].notna()]
         if len(sta_in_area) == 0:
             continue
         buf = unary_union([g.buffer(STATION_BUFFER) for g in sta_in_area.geometry])
+        # Clip buffer to planning area boundary to avoid counting
+        # linkways from neighbouring areas
+        if pa_name in pa_poly:
+            buf = buf.intersection(pa_poly[pa_name])
         n_hdb = int(hdb_gdf.geometry.within(buf).sum())
         in_buf = lw_rp.within(buf)
         n_lw = int(in_buf.sum())
