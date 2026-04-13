@@ -297,9 +297,11 @@ function renderQ3CommuterRose() {
   const maxLw = Math.max(...displayAreas.map(a => a.lw_per_1k)) || 4.7;
   const fmtArea = name => name.charAt(0) + name.slice(1).toLowerCase();
 
-  // Old estates (index 0) gets a reduced base; others scale proportionally by commuter count
-  const OLD_BASE_ICONS = 50;
-  const oldCommuters = displayAreas[0].commuters;
+  const ICON_W = 12, ICON_H = 16, GAP = 3;
+  // Row offsets: New = 0, Mid = -2, Old = -4
+  const ROW_OFFSETS = [4, 2, 0];
+
+  const cards = [];
 
   displayAreas.forEach((a, index) => {
     const personColor = a._color;
@@ -332,53 +334,68 @@ function renderQ3CommuterRose() {
     viz.style.alignItems = 'center';
     viz.style.minHeight = '0';
 
-    // Umbrella width based on linkways per 1k relative to the max in this group
     const coveragePct = Math.min(100, (a.lw_per_1k / maxLw) * 100);
     const umbrellaColor = a._umbrellaColor || '#888';
-    
-    const umbrellaHtml = `
+    viz.insertAdjacentHTML('beforeend', `
       <div style="width: 100%; height: 18px; position: relative; display: flex; justify-content: center; margin-bottom: 6px;">
         <div style="width: ${coveragePct}%; height: 100%; border-top-left-radius: 40px; border-top-right-radius: 40px; background: ${umbrellaColor}; position: relative; transition: width 1s ease-out; box-shadow: 0 -2px 6px rgba(0,0,0,0.5); z-index: 2;">
           <div style="position: absolute; left: 50%; bottom: -4px; width: 2px; height: 4px; background: #888; transform: translateX(-50%);"></div>
         </div>
       </div>
-    `;
-    viz.insertAdjacentHTML('beforeend', umbrellaHtml);
-
-    // Old estates = OLD_BASE_ICONS; others scale proportionally by commuter ratio
-    const numIcons = index === 0
-      ? OLD_BASE_ICONS
-      : Math.max(1, Math.round(OLD_BASE_ICONS * (a.commuters / oldCommuters)));
+    `);
 
     const grid = document.createElement('div');
     grid.style.display = 'flex';
     grid.style.flexWrap = 'wrap';
     grid.style.alignContent = 'flex-start';
     grid.style.justifyContent = 'center';
-    grid.style.gap = '1px';
+    grid.style.gap = GAP + 'px';
     grid.style.width = '100%';
     grid.style.flex = '1';
-    grid.style.position = 'relative';
-    grid.style.zIndex = '1';
     grid.style.overflow = 'hidden';
 
-    const personSvg = `
-      <svg viewBox="0 0 24 24" fill="${personColor}" style="width: 9px; height: 12px; opacity: 0.9;">
-        <circle cx="12" cy="5" r="4"></circle>
-        <path d="M12 10c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4z"></path>
-      </svg>
-    `;
-    for (let i = 0; i < numIcons; i++) {
-      const p = document.createElement('div');
-      p.innerHTML = personSvg;
-      grid.appendChild(p);
-    }
     viz.appendChild(grid);
-
-
     block.appendChild(viz);
     container.appendChild(block);
+
+    cards.push({ grid, personColor, rowOffset: ROW_OFFSETS[index] });
   });
+
+  // Fill icons based on measured grid size; re-fill on resize
+  let prevCols = 0, prevRows = 0;
+
+  function fillIcons() {
+    const ref = cards[cards.length - 1].grid; // New HDB = largest, use as reference
+    const w = ref.clientWidth;
+    const h = ref.clientHeight;
+    if (!w || !h) return;
+
+    const cols = Math.min(25, Math.floor((w + GAP) / (ICON_W + GAP)));
+    const maxRows = Math.min(12, Math.floor((h + GAP) / (ICON_H + GAP)));
+    if (cols === prevCols && maxRows === prevRows) return; // no change
+    prevCols = cols;
+    prevRows = maxRows;
+
+    cards.forEach(c => {
+      const rows = Math.max(1, maxRows - c.rowOffset);
+      const n = rows * cols;
+
+      c.grid.innerHTML = '';
+      const svg = `<svg viewBox="0 0 24 24" fill="${c.personColor}" style="width:${ICON_W}px;height:${ICON_H}px;opacity:0.9;"><circle cx="12" cy="5" r="4"></circle><path d="M12 10c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4z"></path></svg>`;
+      const frag = document.createDocumentFragment();
+      for (let i = 0; i < n; i++) {
+        const p = document.createElement('div');
+        p.innerHTML = svg;
+        frag.appendChild(p);
+      }
+      c.grid.appendChild(frag);
+    });
+  }
+
+  requestAnimationFrame(fillIcons);
+
+  const ro = new ResizeObserver(() => fillIcons());
+  ro.observe(cards[cards.length - 1].grid);
 }
 
 /* ═══════════════════════════════════════════════════════════════════
