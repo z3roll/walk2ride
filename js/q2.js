@@ -269,36 +269,218 @@ function medianYearColor(year) {
    Bars coloured by mean HDB year (red old → green new), so the palette
    lines up with Chart 1's visualMap scheme.
    ═══════════════════════════════════════════════════════════════════ */
+let q2Chart2Mode = 'linkway'; // 'linkway', 'boxplot', or 'population'
+
 function renderQ2Timeline() {
   const chart2 = window.AREA_CHART2 || [];
-  // Filter: need full-area data, exclude tiny-HDB outliers (Rochor, Bukit Timah)
   const areas = chart2.filter(a =>
     a.year_mean && (a.n_hdb_full || a.n_hdb_400m) >= 50 &&
-    (a.lw_length_full || a.lw_length_m) > 0
+    (a.lw_length_full || a.lw_length_m) > 0 &&
+    a.name !== 'YISHUN'
   ).sort((a, b) => a.year_mean - b.year_mean);
   if (!areas.length) return;
 
   if (!q2TimelineChart) q2TimelineChart = echarts.init(document.getElementById('q2-chart-timeline'), 'dark');
 
+  // Add toggle button if not yet created
+  const wrap = document.getElementById('q2-chart-timeline-wrap');
+  if (wrap && !document.getElementById('q2-chart2-toggle')) {
+    const btn = document.createElement('button');
+    btn.id = 'q2-chart2-toggle';
+    const modeOrder = ['linkway', 'boxplot', 'population'];
+    const nextLabel = { linkway: 'HDB Year Distribution', boxplot: 'Population', population: 'Linkway per HDB' };
+    btn.textContent = '▸ ' + nextLabel['linkway'];
+    btn.style.cssText = 'position:absolute;top:8px;right:16px;z-index:10;padding:5px 14px;border-radius:6px;border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font);';
+    btn.onclick = () => {
+      const idx = (modeOrder.indexOf(q2Chart2Mode) + 1) % modeOrder.length;
+      q2Chart2Mode = modeOrder[idx];
+      btn.textContent = '▸ ' + nextLabel[q2Chart2Mode];
+      renderQ2Chart2Option(areas);
+    };
+    wrap.style.position = 'relative';
+    wrap.appendChild(btn);
+  }
+
+  renderQ2Chart2Option(areas);
+}
+
+function renderQ2Chart2Option(areas) {
   const fmtArea = a => a.name.charAt(0) + a.name.slice(1).toLowerCase();
   const categories = areas.map(fmtArea);
-
-  // Per-HDB: 400m linkway / 400m HDB (station-area scope)
   const chart1 = window.AREA_CHART1 || {};
+
+  if (q2Chart2Mode === 'boxplot') {
+    // Boxplot: HDB construction year distribution per area
+    const boxData = areas.map(a => a.year_box || [0,0,0,0,0]);
+
+    q2TimelineChart.setOption({
+      backgroundColor: '#0f1117',
+      animation: true,
+      animationDuration: 700,
+      title: {
+        text: 'HDB Construction Year Distribution — by Area (Old → New)',
+        left: 16, top: 10,
+        textStyle: { fontSize: 13, fontWeight: 600, color: '#ddd' },
+      },
+      legend: { show: false },
+      graphic: [],
+      grid: { left: 72, right: 40, top: 50, bottom: 82 },
+      tooltip: {
+        trigger: 'item',
+        backgroundColor: '#1e222bf0',
+        borderColor: '#3a3f4a',
+        textStyle: { color: '#e8eaed', fontSize: 12 },
+        formatter: p => {
+          if (!p.data) return '';
+          const idx = p.dataIndex;
+          const a = areas[idx];
+          const b = a.year_box || [];
+          const hFull = a.n_hdb_full || a.n_hdb_400m;
+          return `<b style="font-size:13px;">${fmtArea(a)}</b><br/>
+            <span style="color:#888;">HDB blocks:</span> <b>${hFull}</b><br/>
+            <div style="margin-top:4px;border-top:1px solid #333;padding-top:4px;">
+            <span style="color:#888;">Min:</span> <b>${b[0]}</b><br/>
+            <span style="color:#888;">Q1 (25%):</span> <b>${b[1]}</b><br/>
+            <span style="color:#888;">Median:</span> <b style="color:#4fc3f7;">${b[2]}</b><br/>
+            <span style="color:#888;">Q3 (75%):</span> <b>${b[3]}</b><br/>
+            <span style="color:#888;">Max:</span> <b>${b[4]}</b></div>`;
+        },
+      },
+      xAxis: {
+        type: 'category',
+        data: categories,
+        axisLabel: { color: '#aaa', fontSize: 9, interval: 0, rotate: 45 },
+        axisLine: { lineStyle: { color: '#2a2f3a' } },
+        axisTick: { show: false },
+      },
+      yAxis: [{
+        type: 'value',
+        name: 'Construction Year',
+        nameLocation: 'middle',
+        nameGap: 50,
+        nameTextStyle: { fontSize: 11, color: '#888' },
+        min: 1935,
+        max: 2030,
+        axisLabel: { color: '#888', fontSize: 10 },
+        splitLine: { lineStyle: { color: '#1c2029' } },
+        axisLine: { show: false },
+      }],
+      series: [{
+        name: 'HDB Year',
+        type: 'boxplot',
+        data: boxData,
+        itemStyle: {
+          color: 'rgba(79,195,247,0.15)',
+          borderColor: '#4fc3f7',
+          borderWidth: 1.5,
+        },
+        emphasis: {
+          itemStyle: { borderColor: '#fff', borderWidth: 2 },
+        },
+      }],
+    }, true);
+    return;
+  }
+
+  if (q2Chart2Mode === 'population') {
+    const popData = areas.map(a => ({
+      value: (a.total_pop || 0) / 1000,
+      itemStyle: { color: q2YearColor(a.year_mean), borderColor: '#0f1117', borderWidth: 0.5 },
+    }));
+    const lwData = areas.map(a => +((a.lw_length_full || a.lw_length_m) / 1000).toFixed(1));
+
+    q2TimelineChart.setOption({
+      backgroundColor: '#0f1117',
+      animation: true,
+      animationDuration: 700,
+      title: {
+        text: 'Population & Linkway Length — by HDB Era (Old → New)',
+        left: 16, top: 10,
+        textStyle: { fontSize: 13, fontWeight: 600, color: '#ddd' },
+      },
+      legend: {
+        show: true,
+        data: ['Population (k)', 'Linkway length (km)'],
+        right: '45%', top: 48,
+        padding: [0, 20, 0, 0],
+        textStyle: { color: '#ffffff', fontSize: 11, fontWeight: 500 },
+        icon: 'circle', itemWidth: 10, itemHeight: 10, itemGap: 20,
+      },
+      graphic: [{
+        type: 'group', left: '55%', top: 50,
+        children: [
+          { type: 'text', left: 20, top: 4, style: { text: 'HDB Era:', fill: '#ffffff', fontSize: 11, fontWeight: 500 } },
+          { type: 'text', left: 76, top: 5, style: { text: 'Old', fill: '#ffffff', fontSize: 10, fontWeight: 600 } },
+          { type: 'rect', left: 100, top: 6, shape: { width: 120, height: 8, r: 4 },
+            style: { fill: { type: 'linear', x: 0, y: 0, x2: 1, y2: 0,
+              colorStops: [{offset:0,color:'#b71c1c'},{offset:0.48,color:'#ef9a9a'},{offset:0.52,color:'#a5d6a7'},{offset:1,color:'#1b5e20'}]
+            }, shadowBlur: 4, shadowColor: 'rgba(0,0,0,0.3)', shadowOffsetY: 2 }
+          },
+          { type: 'text', left: 226, top: 5, style: { text: 'New', fill: '#ffffff', fontSize: 10, fontWeight: 600 } },
+        ],
+      }],
+      grid: { left: 72, right: 80, top: 86, bottom: 82 },
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'shadow' },
+        backgroundColor: '#1e222bf0',
+        borderColor: '#3a3f4a',
+        textStyle: { color: '#e8eaed', fontSize: 12 },
+        formatter: params => {
+          if (!params || !params.length) return '';
+          const idx = params[0].dataIndex;
+          const a = areas[idx];
+          const h = a.n_hdb_full || a.n_hdb_400m;
+          const lw = a.lw_length_full || a.lw_length_m;
+          const p = a.total_pop || 0;
+          return `<b style="font-size:13px;">${fmtArea(a)}</b><br/>
+            <span style="color:#888;">Mean HDB year:</span> <b>${a.year_mean.toFixed(0)}</b><br/>
+            <div style="margin-top:4px;border-top:1px solid #333;padding-top:4px;">
+            <span style="color:#888;">Population:</span> <b style="color:#4fc3f7;">${p.toLocaleString()}</b><br/>
+            <span style="color:#888;">HDB blocks:</span> <b>${h}</b><br/>
+            <span style="color:#888;">Linkway:</span> <b style="color:#ff8a65;">${(lw/1000).toFixed(1)} km</b></div>`;
+        },
+      },
+      xAxis: {
+        type: 'category',
+        data: categories,
+        axisLabel: { color: '#aaa', fontSize: 9, interval: 0, rotate: 45 },
+        axisLine: { lineStyle: { color: '#2a2f3a' } },
+        axisTick: { show: false },
+      },
+      yAxis: [
+        { type: 'value', name: 'Population (thousands)', nameLocation: 'middle', nameGap: 50,
+          nameTextStyle: { fontSize: 11, color: '#4fc3f7' },
+          axisLabel: { color: '#4fc3f7', fontSize: 10 },
+          splitLine: { lineStyle: { color: '#1c2029' } }, axisLine: { show: false } },
+        { type: 'value', name: 'Linkway length (km)', nameLocation: 'middle', nameGap: 50,
+          nameTextStyle: { fontSize: 11, color: '#ff8a65' },
+          axisLabel: { color: '#ff8a65', fontSize: 10 },
+          splitLine: { show: false }, axisLine: { show: false } },
+      ],
+      series: [
+        { name: 'Population (k)', type: 'bar', barWidth: '62%', data: popData, yAxisIndex: 0,
+          emphasis: { itemStyle: { borderColor: '#fff', borderWidth: 2 } } },
+        { name: 'Linkway length (km)', type: 'line', data: lwData, yAxisIndex: 1,
+          smooth: false, symbol: 'circle', symbolSize: 6,
+          lineStyle: { color: '#ff8a65', width: 2.2 },
+          itemStyle: { color: '#ff8a65', borderColor: '#0f1117', borderWidth: 1.5 } },
+      ],
+    }, true);
+    return;
+  }
+
+  // Default: full-area linkway per HDB bar + per-1k-residents line
   const perHdbArr = areas.map(a => {
-    const c1 = chart1[a.name];
-    if (c1 && c1.n_hdb_400m > 0) return +(c1.lw_length_m / c1.n_hdb_400m).toFixed(1);
     const h = a.n_hdb_full || a.n_hdb_400m;
     const l = a.lw_length_full || a.lw_length_m;
     return +(l / h).toFixed(1);
   });
-  // Per-1k residents: full-area linkway / full-area population
   const perKArr = areas.map(a => {
     const l = a.lw_length_full || a.lw_length_m;
     const p = a.total_pop || 0;
     return p > 0 ? +(l / (p / 1000)).toFixed(1) : 0;
   });
-
   const barData = perHdbArr.map((v, i) => ({
     value: v,
     itemStyle: { color: q2YearColor(areas[i].year_mean), borderColor: '#0f1117', borderWidth: 0.5 },
@@ -314,6 +496,7 @@ function renderQ2Timeline() {
       textStyle: { fontSize: 13, fontWeight: 600, color: '#ddd' },
     },
     legend: {
+      show: true,
       data: ['Per HDB (m)', 'Per 1,000 residents (m)'],
       right: '45%', top: 48,
       padding: [0, 20, 0, 0],
@@ -330,25 +513,25 @@ function renderQ2Timeline() {
       children: [
         { type: 'text', left: 20, top: 4, style: { text: 'HDB Era:', fill: '#ffffff', fontSize: 11, fontWeight: 500 } },
         { type: 'text', left: 76, top: 5, style: { text: 'Old', fill: '#ffffff', fontSize: 10, fontWeight: 600 } },
-        { 
-          type: 'rect', 
-          left: 100, 
-          top: 6, 
-          shape: { width: 120, height: 8, r: 4 }, 
-          style: { 
-            fill: { 
-              type: 'linear', x: 0, y: 0, x2: 1, y2: 0, 
+        {
+          type: 'rect',
+          left: 100,
+          top: 6,
+          shape: { width: 120, height: 8, r: 4 },
+          style: {
+            fill: {
+              type: 'linear', x: 0, y: 0, x2: 1, y2: 0,
               colorStops: [
                 {offset: 0, color: '#b71c1c'},
                 {offset: 0.48, color: '#ef9a9a'},
                 {offset: 0.52, color: '#a5d6a7'},
                 {offset: 1, color: '#1b5e20'}
-              ] 
+              ]
             },
             shadowBlur: 4,
             shadowColor: 'rgba(0,0,0,0.3)',
             shadowOffsetY: 2
-          } 
+          }
         },
         { type: 'text', left: 226, top: 5, style: { text: 'New', fill: '#ffffff', fontSize: 10, fontWeight: 600 } },
       ],
@@ -365,10 +548,8 @@ function renderQ2Timeline() {
         const idx = params[0].dataIndex;
         const a = areas[idx];
         const c1 = chart1[a.name];
-        // 400m scope for per-HDB
         const h400 = c1 ? c1.n_hdb_400m : 0;
         const l400 = c1 ? c1.lw_length_m : 0;
-        // Full-area scope for per-resident
         const lFull = a.lw_length_full || a.lw_length_m;
         const p = a.total_pop || 0;
         const hFull = a.n_hdb_full || a.n_hdb_400m;
@@ -376,15 +557,15 @@ function renderQ2Timeline() {
           <span style="color:#888;">Mean HDB year:</span> <b>${a.year_mean.toFixed(0)}</b>
           <span style="color:#888;margin-left:8px;">Population:</span> <b>${p.toLocaleString()}</b>
           <div style="margin-top:4px;border-top:1px solid #333;padding-top:4px;">
-          <span style="color:#aaa;font-weight:600;">Within 400m of MRT/LRT</span><br/>
-          <span style="color:#888;">HDB:</span> <b>${h400}</b>
-          <span style="color:#888;margin-left:8px;">Linkway:</span> <b>${(l400/1000).toFixed(2)} km</b><br/>
-          <span style="color:#888;">Per HDB:</span> <b style="color:#ffcc80;">${h400 > 0 ? (l400/h400).toFixed(1) : '—'} m</b></div>
-          <div style="margin-top:4px;border-top:1px solid #333;padding-top:4px;">
           <span style="color:#aaa;font-weight:600;">Full area</span><br/>
           <span style="color:#888;">HDB:</span> <b>${hFull}</b>
           <span style="color:#888;margin-left:8px;">Linkway:</span> <b>${(lFull/1000).toFixed(2)} km</b><br/>
-          <span style="color:#888;">Per 1k residents:</span> <b style="color:#fdd835;">${p > 0 ? (lFull/(p/1000)).toFixed(1) : '—'} m</b></div>`;
+          <span style="color:#888;">Per HDB:</span> <b style="color:#ffcc80;">${hFull > 0 ? (lFull/hFull).toFixed(1) : '—'} m</b>
+          <span style="color:#888;margin-left:8px;">Per 1k residents:</span> <b style="color:#fdd835;">${p > 0 ? (lFull/(p/1000)).toFixed(1) : '—'} m</b></div>
+          <div style="margin-top:4px;border-top:1px solid #333;padding-top:4px;">
+          <span style="color:#aaa;font-weight:600;">Within 400m of MRT/LRT</span><br/>
+          <span style="color:#888;">HDB:</span> <b>${h400}</b>
+          <span style="color:#888;margin-left:8px;">Linkway:</span> <b>${(l400/1000).toFixed(2)} km</b></div>`;
       },
     },
     xAxis: {
