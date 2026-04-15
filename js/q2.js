@@ -142,9 +142,7 @@ function renderQ2HdbScatter() {
     _raw: a,
   }));
 
-  // Label the top-6 areas by HDB count to anchor the view
-  const sortedByHdb = [...seriesData].sort((a, b) => b.value[0] - a.value[0]);
-  const labelSet = new Set(sortedByHdb.slice(0, 6).map(d => d.name));
+  const labelSet = new Set(['Punggol', 'Bukit panjang']);
   seriesData.forEach(d => {
     if (labelSet.has(d.name)) {
       d.label = {
@@ -368,12 +366,17 @@ function renderQ2Chart2Option(areas) {
       series: [{
         name: 'HDB Year',
         type: 'boxplot',
-        data: boxData,
-        itemStyle: {
-          color: 'rgba(79,195,247,0.15)',
-          borderColor: '#4fc3f7',
-          borderWidth: 1.5,
-        },
+        data: boxData.map((d, i) => {
+          const c = q2YearColor(areas[i].year_mean);
+          return {
+            value: d,
+            itemStyle: {
+              color: 'transparent',
+              borderColor: c,
+              borderWidth: 1.5,
+            },
+          };
+        }),
         emphasis: {
           itemStyle: { borderColor: '#fff', borderWidth: 2 },
         },
@@ -438,7 +441,7 @@ function renderQ2Chart2Option(areas) {
             <div style="margin-top:4px;border-top:1px solid #333;padding-top:4px;">
             <span style="color:#888;">Population:</span> <b style="color:#4fc3f7;">${p.toLocaleString()}</b><br/>
             <span style="color:#888;">HDB blocks:</span> <b>${h}</b><br/>
-            <span style="color:#888;">Linkway:</span> <b style="color:#ff8a65;">${(lw/1000).toFixed(1)} km</b></div>`;
+            <span style="color:#888;">Linkway:</span> <b style="color:#fdd835;">${(lw/1000).toFixed(1)} km</b></div>`;
         },
       },
       xAxis: {
@@ -454,8 +457,8 @@ function renderQ2Chart2Option(areas) {
           axisLabel: { color: '#4fc3f7', fontSize: 10 },
           splitLine: { lineStyle: { color: '#1c2029' } }, axisLine: { show: false } },
         { type: 'value', name: 'Linkway length (km)', nameLocation: 'middle', nameGap: 50,
-          nameTextStyle: { fontSize: 11, color: '#ff8a65' },
-          axisLabel: { color: '#ff8a65', fontSize: 10 },
+          nameTextStyle: { fontSize: 11, color: '#fdd835' },
+          axisLabel: { color: '#fdd835', fontSize: 10 },
           splitLine: { show: false }, axisLine: { show: false } },
       ],
       series: [
@@ -463,8 +466,8 @@ function renderQ2Chart2Option(areas) {
           emphasis: { itemStyle: { borderColor: '#fff', borderWidth: 2 } } },
         { name: 'Linkway length (km)', type: 'line', data: lwData, yAxisIndex: 1,
           smooth: false, symbol: 'circle', symbolSize: 6,
-          lineStyle: { color: '#ff8a65', width: 2.2 },
-          itemStyle: { color: '#ff8a65', borderColor: '#0f1117', borderWidth: 1.5 } },
+          lineStyle: { color: '#fdd835', width: 2.2 },
+          itemStyle: { color: '#fdd835', borderColor: '#0f1117', borderWidth: 1.5 } },
       ],
     }, true);
     return;
@@ -581,8 +584,8 @@ function renderQ2Chart2Option(areas) {
         name: 'Per HDB (m)',
         nameLocation: 'middle',
         nameGap: 50,
-        nameTextStyle: { fontSize: 11, color: '#888' },
-        axisLabel: { color: '#888', fontSize: 10 },
+        nameTextStyle: { fontSize: 11, color: '#4992ff' },
+        axisLabel: { color: '#4992ff', fontSize: 10 },
         splitLine: { lineStyle: { color: '#1c2029' } },
         axisLine: { show: false },
       },
@@ -886,7 +889,7 @@ function initQ2Map(detail, areaName) {
       });
       q2Map.addLayer({
         id: 'area-cl-line', type: 'line', source: 'area-cl',
-        paint: { 'line-color': '#4caf50', 'line-width': 1.2, 'line-opacity': 0.95 }
+        paint: { 'line-color': '#4caf50', 'line-width': 2.5, 'line-opacity': 0.95 }
       });
       const clPopup = new maplibregl.Popup({ closeButton: false, closeOnClick: false });
       q2Map.on('mouseenter', 'area-cl-fill', e => {
@@ -914,7 +917,7 @@ function initQ2Map(detail, areaName) {
       });
       q2Map.addLayer({
         id: 'area-br-line', type: 'line', source: 'area-br',
-        paint: { 'line-color': '#4caf50', 'line-width': 1.2, 'line-opacity': 0.95 }
+        paint: { 'line-color': '#4caf50', 'line-width': 2.5, 'line-opacity': 0.95 }
       });
     }
 
@@ -927,7 +930,7 @@ function initQ2Map(detail, areaName) {
     q2Map.addSource('hdb', { type: 'geojson', data: { type: 'FeatureCollection', features: hdbFeatures } });
     q2Map.addLayer({
       id: 'hdb-dot', type: 'circle', source: 'hdb',
-      paint: { 'circle-radius': 5, 'circle-color': '#26c6da', 'circle-stroke-width': 1.5, 'circle-stroke-color': '#fff', 'circle-opacity': 0.85 }
+      paint: { 'circle-radius': 3, 'circle-color': '#26c6da', 'circle-stroke-width': 1, 'circle-stroke-color': '#fff', 'circle-opacity': 0.85 }
     });
     const hdbPopup = new maplibregl.Popup({ closeButton: false, closeOnClick: false });
     q2Map.on('mouseenter', 'hdb-dot', e => {
