@@ -267,7 +267,7 @@ function medianYearColor(year) {
    Bars coloured by mean HDB year (red old → green new), so the palette
    lines up with Chart 1's visualMap scheme.
    ═══════════════════════════════════════════════════════════════════ */
-let q2Chart2Mode = 'linkway'; // 'linkway', 'boxplot', or 'population'
+let q2Chart2Mode = 'linkway'; // 'linkway' or 'boxplot'
 
 function renderQ2Timeline() {
   const chart2 = window.AREA_CHART2 || [];
@@ -285,14 +285,11 @@ function renderQ2Timeline() {
   if (wrap && !document.getElementById('q2-chart2-toggle')) {
     const btn = document.createElement('button');
     btn.id = 'q2-chart2-toggle';
-    const modeOrder = ['linkway', 'boxplot', 'population'];
-    const nextLabel = { linkway: 'HDB Year Distribution', boxplot: 'Population', population: 'Linkway per HDB' };
-    btn.textContent = '▸ ' + nextLabel['linkway'];
+    btn.textContent = 'Show HDB Year Distribution';
     btn.style.cssText = 'position:absolute;top:8px;right:16px;z-index:10;padding:5px 14px;border-radius:6px;border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font);';
     btn.onclick = () => {
-      const idx = (modeOrder.indexOf(q2Chart2Mode) + 1) % modeOrder.length;
-      q2Chart2Mode = modeOrder[idx];
-      btn.textContent = '▸ ' + nextLabel[q2Chart2Mode];
+      q2Chart2Mode = q2Chart2Mode === 'linkway' ? 'boxplot' : 'linkway';
+      btn.textContent = q2Chart2Mode === 'linkway' ? 'Show HDB Year Distribution' : 'Show Linkway per HDB';
       renderQ2Chart2Option(areas);
     };
     wrap.style.position = 'relative';
@@ -381,94 +378,6 @@ function renderQ2Chart2Option(areas) {
           itemStyle: { borderColor: '#fff', borderWidth: 2 },
         },
       }],
-    }, true);
-    return;
-  }
-
-  if (q2Chart2Mode === 'population') {
-    const popData = areas.map(a => ({
-      value: (a.total_pop || 0) / 1000,
-      itemStyle: { color: q2YearColor(a.year_mean), borderColor: '#0f1117', borderWidth: 0.5 },
-    }));
-    const lwData = areas.map(a => +((a.lw_length_full || a.lw_length_m) / 1000).toFixed(1));
-
-    q2TimelineChart.setOption({
-      backgroundColor: '#0f1117',
-      animation: true,
-      animationDuration: 700,
-      title: {
-        text: 'Population & Linkway Length — by HDB Era (Old → New)',
-        left: 16, top: 10,
-        textStyle: { fontSize: 13, fontWeight: 600, color: '#ddd' },
-      },
-      legend: {
-        show: true,
-        data: ['Population (k)', 'Linkway length (km)'],
-        right: '45%', top: 48,
-        padding: [0, 20, 0, 0],
-        textStyle: { color: '#ffffff', fontSize: 11, fontWeight: 500 },
-        icon: 'circle', itemWidth: 10, itemHeight: 10, itemGap: 20,
-      },
-      graphic: [{
-        type: 'group', left: '55%', top: 50,
-        children: [
-          { type: 'text', left: 20, top: 4, style: { text: 'HDB Era:', fill: '#ffffff', fontSize: 11, fontWeight: 500 } },
-          { type: 'text', left: 76, top: 5, style: { text: 'Old', fill: '#ffffff', fontSize: 10, fontWeight: 600 } },
-          { type: 'rect', left: 100, top: 6, shape: { width: 120, height: 8, r: 4 },
-            style: { fill: { type: 'linear', x: 0, y: 0, x2: 1, y2: 0,
-              colorStops: [{offset:0,color:'#b71c1c'},{offset:0.48,color:'#ef9a9a'},{offset:0.52,color:'#a5d6a7'},{offset:1,color:'#1b5e20'}]
-            }, shadowBlur: 4, shadowColor: 'rgba(0,0,0,0.3)', shadowOffsetY: 2 }
-          },
-          { type: 'text', left: 226, top: 5, style: { text: 'New', fill: '#ffffff', fontSize: 10, fontWeight: 600 } },
-        ],
-      }],
-      grid: { left: 72, right: 80, top: 86, bottom: 82 },
-      tooltip: {
-        trigger: 'axis',
-        axisPointer: { type: 'shadow' },
-        backgroundColor: '#1e222bf0',
-        borderColor: '#3a3f4a',
-        textStyle: { color: '#e8eaed', fontSize: 12 },
-        formatter: params => {
-          if (!params || !params.length) return '';
-          const idx = params[0].dataIndex;
-          const a = areas[idx];
-          const h = a.n_hdb_full || a.n_hdb_400m;
-          const lw = a.lw_length_full || a.lw_length_m;
-          const p = a.total_pop || 0;
-          return `<b style="font-size:13px;">${fmtArea(a)}</b><br/>
-            <span style="color:#888;">Mean HDB year:</span> <b>${a.year_mean.toFixed(0)}</b><br/>
-            <div style="margin-top:4px;border-top:1px solid #333;padding-top:4px;">
-            <span style="color:#888;">Population:</span> <b style="color:#4fc3f7;">${p.toLocaleString()}</b><br/>
-            <span style="color:#888;">HDB blocks:</span> <b>${h}</b><br/>
-            <span style="color:#888;">Linkway:</span> <b style="color:#fdd835;">${(lw/1000).toFixed(1)} km</b></div>`;
-        },
-      },
-      xAxis: {
-        type: 'category',
-        data: categories,
-        axisLabel: { color: '#aaa', fontSize: 9, interval: 0, rotate: 45 },
-        axisLine: { lineStyle: { color: '#2a2f3a' } },
-        axisTick: { show: false },
-      },
-      yAxis: [
-        { type: 'value', name: 'Population (thousands)', nameLocation: 'middle', nameGap: 50,
-          nameTextStyle: { fontSize: 11, color: '#4fc3f7' },
-          axisLabel: { color: '#4fc3f7', fontSize: 10 },
-          splitLine: { lineStyle: { color: '#1c2029' } }, axisLine: { show: false } },
-        { type: 'value', name: 'Linkway length (km)', nameLocation: 'middle', nameGap: 50,
-          nameTextStyle: { fontSize: 11, color: '#fdd835' },
-          axisLabel: { color: '#fdd835', fontSize: 10 },
-          splitLine: { show: false }, axisLine: { show: false } },
-      ],
-      series: [
-        { name: 'Population (k)', type: 'bar', barWidth: '62%', data: popData, yAxisIndex: 0,
-          emphasis: { itemStyle: { borderColor: '#fff', borderWidth: 2 } } },
-        { name: 'Linkway length (km)', type: 'line', data: lwData, yAxisIndex: 1,
-          smooth: false, symbol: 'circle', symbolSize: 6,
-          lineStyle: { color: '#fdd835', width: 2.2 },
-          itemStyle: { color: '#fdd835', borderColor: '#0f1117', borderWidth: 1.5 } },
-      ],
     }, true);
     return;
   }
