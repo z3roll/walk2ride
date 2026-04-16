@@ -113,6 +113,17 @@ function renderSidebar() {
   const highMismatch = d.filter(x=>x.mismatch_norm>0.7).length;
 
   document.getElementById('sidebar-content').innerHTML = `
+    <div class="narrative" style="border-color:#ff9800;background:rgba(255,152,0,0.06);">
+      <div class="section-tag"><div class="dot" style="background:#ff9800;"></div>How the Mismatch Score is computed</div>
+      Each station gets a <strong>mismatch score ∈ [0, 1]</strong> built from min–max normalized metrics:
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;background:rgba(0,0,0,0.35);padding:8px 10px;border-radius:6px;margin:8px 0;line-height:1.7;color:#e8eaed;">
+        demand   = 0.6·ridership̂ + 0.4·rainfall̂<br>
+        supply   = shelter_ratiô<br>
+        mismatch = demand · (1 − supply)<br>
+        score    = min–max normalize(mismatch)
+      </div>
+      <span style="color:var(--muted);font-size:11px;">x̂ = (x − min) / (max − min). High demand + low shelter ⇒ high mismatch (red dots).</span>
+    </div>
     <div class="stats-row">
       <div class="stat-card" style="flex:0.7;"><div class="label">Stations</div><div class="value" style="color:var(--accent);">${d.length}</div></div>
       <div class="stat-card"><div class="label">Avg Shelter</div><div class="value" style="color:${avgSr<0.2?'var(--orange)':'var(--green)'};">${(avgSr*100).toFixed(1)}%</div></div>

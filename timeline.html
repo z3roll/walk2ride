@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Singapore Covered Linkways — Growth Timeline</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Outfit:wght@300;500;700;900&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0c10;
+    --panel: #12151c;
+    --border: #1e2330;
+    --text: #c8cdd8;
+    --accent: #4caf50;
+    --glow: rgba(76,175,80,0.35);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  #map {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+  }
+
+  /* ── Top bar ── */
+  #top-bar {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 28px;
+    background: linear-gradient(180deg, rgba(10,12,16,0.92) 0%, rgba(10,12,16,0) 100%);
+    pointer-events: none;
+  }
+
+  #top-bar h1 {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 900;
+    font-size: 20px;
+    letter-spacing: -0.5px;
+    color: #fff;
+    text-shadow: 0 0 30px var(--glow);
+  }
+
+  #top-bar h1 span {
+    color: var(--accent);
+  }
+
+  #stats {
+    display: flex;
+    gap: 28px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+  }
+
+  .stat-val {
+    font-weight: 700;
+    font-size: 18px;
+    color: #fff;
+    text-shadow: 0 0 12px var(--glow);
+  }
+
+  .stat-label {
+    font-size: 10px;
+    color: #667;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 2px;
+  }
+
+  /* ── Year display ── */
+  #year-display {
+    position: absolute;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 900;
+    font-size: 72px;
+    color: rgba(255,255,255,0.06);
+    letter-spacing: -3px;
+    pointer-events: none;
+    transition: color 0.3s;
+    text-shadow: 0 0 60px rgba(76,175,80,0.08);
+  }
+
+  /* ── Timeline slider ── */
+  #timeline {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    z-index: 10;
+    padding: 20px 28px 28px;
+    background: linear-gradient(0deg, rgba(10,12,16,0.95) 0%, rgba(10,12,16,0) 100%);
+  }
+
+  #timeline-track {
+    position: relative;
+    width: 100%;
+    height: 40px;
+    display: flex;
+    align-items: flex-end;
+    gap: 1px;
+    margin-bottom: 10px;
+    cursor: grab;
+    user-select: none;
+  }
+
+  #timeline-track:active {
+    cursor: grabbing;
+  }
+
+  .bar {
+    flex: 1;
+    background: var(--accent);
+    border-radius: 2px 2px 0 0;
+    opacity: 0.25;
+    transition: opacity 0.3s, background 0.3s;
+    position: relative;
+    cursor: pointer;
+  }
+
+  .bar.active {
+    opacity: 1;
+    box-shadow: 0 0 8px var(--glow);
+  }
+
+  .bar:hover {
+    opacity: 0.8;
+  }
+
+  .bar-label {
+    position: absolute;
+    bottom: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    color: #556;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  .bar.active .bar-label {
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  #controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 18px;
+  }
+
+  #controls button {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 8px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  #controls button:hover {
+    background: #1a1f2e;
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  #controls button.playing {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
+  }
+
+  #speed-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: #556;
+  }
+
+  /* ── New linkways flash ── */
+  #flash-count {
+    position: absolute;
+    bottom: 160px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--accent);
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    text-shadow: 0 0 20px var(--glow);
+  }
+
+  #flash-count.show {
+    opacity: 1;
+  }
+
+  /* maplibre overrides */
+  .maplibregl-ctrl-attrib { display: none !important; }
+</style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<div id="top-bar">
+  <h1><span>●</span> Singapore Covered Linkways</h1>
+  <div id="stats">
+    <div>
+      <div class="stat-val" id="stat-date">—</div>
+      <div class="stat-label">Date</div>
+    </div>
+    <div>
+      <div class="stat-val" id="stat-total">0</div>
+      <div class="stat-label">Linkways</div>
+    </div>
+    <div>
+      <div class="stat-val" id="stat-new">—</div>
+      <div class="stat-label">New this period</div>
+    </div>
+    <div>
+      <div class="stat-val" id="stat-length">0</div>
+      <div class="stat-label">Total Length (km)</div>
+    </div>
+  </div>
+</div>
+
+<div id="year-display"></div>
+<div id="flash-count"></div>
+
+<div id="timeline">
+  <div id="timeline-track"></div>
+  <div id="controls">
+    <button id="btn-play" onclick="togglePlay()">▶ Play</button>
+    <button onclick="changeSpeed()"><span id="speed-label">1×</span></button>
+  </div>
+</div>
+
+<script>
+const SG_CENTER = [103.82, 1.355];
+const SG_BOUNDS = [[103.59, 1.15], [104.05, 1.48]];
+
+let linkways = [];
+let timestamps = [];
+let currentIdx = 0;
+let playing = false;
+let playTimer = null;
+let speed = 1;
+
+const map = new maplibregl.Map({
+  container: 'map',
+  style: {
+    version: 8,
+    sources: {
+      'carto-dark': {
+        type: 'raster',
+        tiles: ['https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'],
+        tileSize: 256,
+        attribution: '© CartoDB © OpenStreetMap'
+      }
+    },
+    layers: [{
+      id: 'carto-dark',
+      type: 'raster',
+      source: 'carto-dark',
+      minzoom: 0,
+      maxzoom: 19
+    }]
+  },
+  center: SG_CENTER,
+  zoom: 11.3,
+  maxBounds: SG_BOUNDS,
+  attributionControl: false,
+});
+
+map.on('load', async () => {
+  const resp = await fetch('data/linkway_timeline.json');
+  linkways = await resp.json();
+
+  // Precompute centerline length for each linkway (haversine, meters)
+  function haversineLen(coords) {
+    let total = 0;
+    for (let i = 0; i < coords.length - 1; i++) {
+      const [lon1, lat1] = coords[i], [lon2, lat2] = coords[i+1];
+      const dLat = (lat2-lat1)*Math.PI/180, dLon = (lon2-lon1)*Math.PI/180;
+      const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+      total += 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+    return total;
+  }
+  linkways.forEach(lw => { lw._len = haversineLen(lw.c); });
+
+  // Extract unique timestamps in order
+  const tsSet = new Set();
+  linkways.forEach(lw => tsSet.add(lw.fs));
+  timestamps = [...tsSet].sort();
+
+  // Precompute cumulative counts per timestamp
+  const countByTs = {};
+  linkways.forEach(lw => {
+    countByTs[lw.fs] = (countByTs[lw.fs] || 0) + 1;
+  });
+
+  // Build histogram bars
+  const track = document.getElementById('timeline-track');
+  const maxCount = Math.max(...Object.values(countByTs));
+  timestamps.forEach((ts, i) => {
+    const bar = document.createElement('div');
+    bar.className = 'bar';
+    const h = Math.max(4, (countByTs[ts] / maxCount) * 36);
+    bar.style.height = h + 'px';
+    bar.onclick = () => goTo(i);
+
+    // Show label for every ~4th bar or first/last
+    if (i === 0 || i === timestamps.length - 1 || i % 4 === 0) {
+      const label = document.createElement('div');
+      label.className = 'bar-label';
+      label.textContent = ts;
+      bar.appendChild(label);
+    }
+
+    track.appendChild(bar);
+  });
+
+  // Add all linkways as a single source
+  const features = linkways.map((lw, idx) => ({
+    type: 'Feature',
+    geometry: { type: 'Polygon', coordinates: [lw.c] },
+    properties: { fs: lw.fs, idx: idx }
+  }));
+
+  map.addSource('linkways', {
+    type: 'geojson',
+    data: { type: 'FeatureCollection', features }
+  });
+
+  map.addLayer({
+    id: 'lw-fill',
+    type: 'fill',
+    source: 'linkways',
+    paint: {
+      'fill-color': '#4caf50',
+      'fill-opacity': 0
+    },
+    filter: ['<=', ['get', 'fs'], timestamps[0]]
+  });
+
+  map.addLayer({
+    id: 'lw-line',
+    type: 'line',
+    source: 'linkways',
+    paint: {
+      'line-color': '#66ff66',
+      'line-width': 1,
+      'line-opacity': 0
+    },
+    filter: ['<=', ['get', 'fs'], timestamps[0]]
+  });
+
+  goTo(0);
+});
+
+function goTo(idx) {
+  currentIdx = idx;
+  const ts = timestamps[idx];
+
+  // Update filter to show all linkways up to this timestamp
+  const filter = ['<=', ['get', 'fs'], ts];
+  map.setFilter('lw-fill', filter);
+  map.setFilter('lw-line', filter);
+
+  // Animate opacity
+  map.setPaintProperty('lw-fill', 'fill-opacity', 0.65);
+  map.setPaintProperty('lw-line', 'line-opacity', 0.85);
+
+  // Count & length
+  let cumulative = 0, newCount = 0, totalLen = 0;
+  for (const lw of linkways) {
+    if (lw.fs <= ts) {
+      cumulative++;
+      totalLen += lw._len;
+    }
+    if (lw.fs === ts) newCount++;
+  }
+
+  document.getElementById('stat-total').textContent = cumulative.toLocaleString();
+  document.getElementById('stat-new').textContent = '+' + newCount.toLocaleString();
+  document.getElementById('stat-length').textContent = (totalLen / 1000).toFixed(1);
+
+  // Year display
+  const [year, month] = ts.split('-');
+  const monthNames = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const dateStr = monthNames[+month] + ' ' + year;
+  document.getElementById('year-display').textContent = dateStr;
+  document.getElementById('stat-date').textContent = dateStr;
+
+  // Flash
+  const flash = document.getElementById('flash-count');
+  flash.textContent = '+' + newCount + ' linkways';
+  flash.classList.add('show');
+  setTimeout(() => flash.classList.remove('show'), 1200);
+
+  // Update bars
+  document.querySelectorAll('.bar').forEach((bar, i) => {
+    bar.classList.toggle('active', i <= idx);
+  });
+}
+
+function togglePlay() {
+  playing = !playing;
+  const btn = document.getElementById('btn-play');
+  btn.textContent = playing ? '⏸ Pause' : '▶ Play';
+  btn.classList.toggle('playing', playing);
+
+  if (playing) {
+    stepForward();
+  } else {
+    clearTimeout(playTimer);
+  }
+}
+
+function stepForward() {
+  if (!playing) return;
+  if (currentIdx < timestamps.length - 1) {
+    goTo(currentIdx + 1);
+    const delay = [1200, 800, 400, 200][speed - 1] || 800;
+    playTimer = setTimeout(stepForward, delay);
+  } else {
+    playing = false;
+    document.getElementById('btn-play').textContent = '▶ Play';
+    document.getElementById('btn-play').classList.remove('playing');
+  }
+}
+
+function changeSpeed() {
+  speed = speed >= 4 ? 1 : speed + 1;
+  document.getElementById('speed-label').textContent = speed + '×';
+}
+
+// Drag on timeline track
+(function() {
+  const track = document.getElementById('timeline-track');
+  let dragging = false;
+
+  function idxFromEvent(e) {
+    const rect = track.getBoundingClientRect();
+    const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+    const ratio = x / rect.width;
+    return Math.round(ratio * (timestamps.length - 1));
+  }
+
+  track.addEventListener('mousedown', e => {
+    dragging = true;
+    goTo(idxFromEvent(e));
+  });
+  window.addEventListener('mousemove', e => {
+    if (dragging) goTo(idxFromEvent(e));
+  });
+  window.addEventListener('mouseup', () => { dragging = false; });
+
+  track.addEventListener('touchstart', e => {
+    dragging = true;
+    goTo(idxFromEvent(e.touches[0]));
+  }, { passive: true });
+  window.addEventListener('touchmove', e => {
+    if (dragging) goTo(idxFromEvent(e.touches[0]));
+  }, { passive: true });
+  window.addEventListener('touchend', () => { dragging = false; });
+})();
+</script>
+</body>
+</html>
