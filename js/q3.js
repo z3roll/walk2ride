@@ -286,8 +286,15 @@ function renderQ3CommuterRose() {
   el.style.overflowY = 'auto';
 
   const title = document.createElement('div');
+  title.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:16px;';
   title.innerHTML = `
-    <div style="font-size: 13px; font-weight: 600; color: ${titleColor()}; margin-bottom: 16px;">Growing Commuter Population, Shrinking Linkway Coverage (25–50 yr olds)</div>
+    <div style="font-size: 13px; font-weight: 600; color: ${titleColor()};">Growing Commuter Population, Shrinking Linkway Coverage (25–50 yr olds)</div>
+    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+      <span style="font-size:11px;font-weight:500;color:${legendTextColor()};">HDB Era:</span>
+      <span style="font-size:10px;font-weight:600;color:${legendTextColor()};">Old</span>
+      <div style="width:120px;height:8px;border-radius:4px;background:linear-gradient(to right,#b71c1c 0%,#ef9a9a 48%,#a5d6a7 52%,#1b5e20 100%);box-shadow:0 1px 3px ${isLight()?'rgba(0,0,0,0.15)':'rgba(0,0,0,0.4)'};"></div>
+      <span style="font-size:10px;font-weight:600;color:${legendTextColor()};">New</span>
+    </div>
   `;
   el.appendChild(title);
 
