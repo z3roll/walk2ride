@@ -90,7 +90,7 @@ function renderQ2HdbScatter() {
       _raw: b,
     }));
 
-  if (!q2Chart) q2Chart = echarts.init(document.getElementById('q2-chart'), 'dark');
+  if (!q2Chart) q2Chart = echarts.init(document.getElementById('q2-chart'), getEchartsTheme());
 
   function pearson(xs, ys) {
     const n = xs.length;
@@ -150,29 +150,29 @@ function renderQ2HdbScatter() {
         formatter: d.name,
         position: 'top',
         fontSize: 10,
-        color: '#fff',
+        color: isLight() ? '#1a1d24' : '#fff',
         fontWeight: 600,
-        textBorderColor: '#000',
+        textBorderColor: isLight() ? '#fff' : '#000',
         textBorderWidth: 2,
       };
     }
   });
 
   q2Chart.setOption({
-    backgroundColor: '#0f1117',
+    backgroundColor: chartBg(),
     animation: true,
     animationDuration: 700,
     title: {
       text: 'Number of Residential HDBs vs Covered Linkway Length',
       left: 16, top: 10,
-      textStyle: { fontSize: 13, fontWeight: 600, color: '#ddd' },
+      textStyle: { fontSize: 13, fontWeight: 600, color: titleColor() },
     },
     grid: { left: 70, right: 40, top: 60, bottom: 50 },
     tooltip: {
       trigger: 'item',
-      backgroundColor: '#1e222bf0',
-      borderColor: '#3a3f4a',
-      textStyle: { color: '#e8eaed', fontSize: 12 },
+      backgroundColor: tooltipBg(),
+      borderColor: tooltipBorder(),
+      textStyle: { color: tooltipText(), fontSize: 12 },
       formatter: p => {
         if (!p.data || !p.data._raw) return '';
         const a = p.data._raw;
@@ -199,21 +199,21 @@ function renderQ2HdbScatter() {
       name: 'Number of Residential HDBs (within 400m of MRT/LRT)',
       nameLocation: 'middle',
       nameGap: 30,
-      nameTextStyle: { fontSize: 11, color: '#888' },
+      nameTextStyle: { fontSize: 11, color: axisNameColor() },
       type: 'value',
-      axisLabel: { color: '#888', fontSize: 10 },
-      splitLine: { lineStyle: { color: '#1c2029' } },
-      axisLine: { lineStyle: { color: '#2a2f3a' } },
+      axisLabel: { color: axisLabelColor(), fontSize: 10 },
+      splitLine: { lineStyle: { color: splitLineColor() } },
+      axisLine: { lineStyle: { color: axisLineColor() } },
     },
     yAxis: {
       name: 'Covered Linkway Length within 400m (m)',
       nameLocation: 'middle',
       nameGap: 48,
-      nameTextStyle: { fontSize: 11, color: '#888' },
+      nameTextStyle: { fontSize: 11, color: axisNameColor() },
       type: 'value',
-      axisLabel: { color: '#888', fontSize: 10 },
-      splitLine: { lineStyle: { color: '#1c2029' } },
-      axisLine: { lineStyle: { color: '#2a2f3a' } },
+      axisLabel: { color: axisLabelColor(), fontSize: 10 },
+      splitLine: { lineStyle: { color: splitLineColor() } },
+      axisLine: { lineStyle: { color: axisLineColor() } },
     },
     series: [
       {
@@ -237,7 +237,7 @@ function renderQ2HdbScatter() {
         symbolSize: 14,
         data: seriesData,
         z: 2,
-        emphasis: { itemStyle: { borderColor: '#fff', borderWidth: 2 } },
+        emphasis: { itemStyle: { borderColor: strongText(), borderWidth: 2 } },
       },
     ],
   }, true);
@@ -278,7 +278,7 @@ function renderQ2Timeline() {
   ).sort((a, b) => a.year_mean - b.year_mean);
   if (!areas.length) return;
 
-  if (!q2TimelineChart) q2TimelineChart = echarts.init(document.getElementById('q2-chart-timeline'), 'dark');
+  if (!q2TimelineChart) q2TimelineChart = echarts.init(document.getElementById('q2-chart-timeline'), getEchartsTheme());
 
   // Add toggle button if not yet created
   const wrap = document.getElementById('q2-chart-timeline-wrap');
@@ -309,22 +309,22 @@ function renderQ2Chart2Option(areas) {
     const boxData = areas.map(a => a.year_box || [0,0,0,0,0]);
 
     q2TimelineChart.setOption({
-      backgroundColor: '#0f1117',
+      backgroundColor: chartBg(),
       animation: true,
       animationDuration: 700,
       title: {
         text: 'HDB Construction Year Distribution — by Area (Old → New)',
         left: 16, top: 10,
-        textStyle: { fontSize: 13, fontWeight: 600, color: '#ddd' },
+        textStyle: { fontSize: 13, fontWeight: 600, color: titleColor() },
       },
       legend: { show: false },
       graphic: [],
       grid: { left: 72, right: 40, top: 50, bottom: 82 },
       tooltip: {
         trigger: 'item',
-        backgroundColor: '#1e222bf0',
-        borderColor: '#3a3f4a',
-        textStyle: { color: '#e8eaed', fontSize: 12 },
+        backgroundColor: tooltipBg(),
+        borderColor: tooltipBorder(),
+        textStyle: { color: tooltipText(), fontSize: 12 },
         formatter: p => {
           if (!p.data) return '';
           const idx = p.dataIndex;
@@ -344,8 +344,8 @@ function renderQ2Chart2Option(areas) {
       xAxis: {
         type: 'category',
         data: categories,
-        axisLabel: { color: '#aaa', fontSize: 9, interval: 0, rotate: 45 },
-        axisLine: { lineStyle: { color: '#2a2f3a' } },
+        axisLabel: { color: axisLabelStrong(), fontSize: 9, interval: 0, rotate: 45 },
+        axisLine: { lineStyle: { color: axisLineColor() } },
         axisTick: { show: false },
       },
       yAxis: [{
@@ -353,11 +353,11 @@ function renderQ2Chart2Option(areas) {
         name: 'Construction Year',
         nameLocation: 'middle',
         nameGap: 50,
-        nameTextStyle: { fontSize: 11, color: '#888' },
+        nameTextStyle: { fontSize: 11, color: axisNameColor() },
         min: 1935,
         max: 2030,
-        axisLabel: { color: '#888', fontSize: 10 },
-        splitLine: { lineStyle: { color: '#1c2029' } },
+        axisLabel: { color: axisLabelColor(), fontSize: 10 },
+        splitLine: { lineStyle: { color: splitLineColor() } },
         axisLine: { show: false },
       }],
       series: [{
@@ -375,7 +375,7 @@ function renderQ2Chart2Option(areas) {
           };
         }),
         emphasis: {
-          itemStyle: { borderColor: '#fff', borderWidth: 2 },
+          itemStyle: { borderColor: strongText(), borderWidth: 2 },
         },
       }],
     }, true);
@@ -395,24 +395,24 @@ function renderQ2Chart2Option(areas) {
   });
   const barData = perHdbArr.map((v, i) => ({
     value: v,
-    itemStyle: { color: q2YearColor(areas[i].year_mean), borderColor: '#0f1117', borderWidth: 0.5 },
+    itemStyle: { color: q2YearColor(areas[i].year_mean), borderColor: borderColor(), borderWidth: 0.5 },
   }));
 
   q2TimelineChart.setOption({
-    backgroundColor: '#0f1117',
+    backgroundColor: chartBg(),
     animation: true,
     animationDuration: 700,
     title: {
       text: 'Covered Linkway per HDB & per 1,000 Residents — by HDB Era (Old → New)',
       left: 16, top: 10,
-      textStyle: { fontSize: 13, fontWeight: 600, color: '#ddd' },
+      textStyle: { fontSize: 13, fontWeight: 600, color: titleColor() },
     },
     legend: {
       show: true,
       data: ['Per HDB (m)', 'Per 1,000 residents (m)'],
       right: '45%', top: 48,
       padding: [0, 20, 0, 0],
-      textStyle: { color: '#ffffff', fontSize: 11, fontWeight: 500 },
+      textStyle: { color: legendTextColor(), fontSize: 11, fontWeight: 500 },
       icon: 'circle',
       itemWidth: 10,
       itemHeight: 10,
@@ -423,8 +423,8 @@ function renderQ2Chart2Option(areas) {
       left: '55%',
       top: 50,
       children: [
-        { type: 'text', left: 20, top: 4, style: { text: 'HDB Era:', fill: '#ffffff', fontSize: 11, fontWeight: 500 } },
-        { type: 'text', left: 76, top: 5, style: { text: 'Old', fill: '#ffffff', fontSize: 10, fontWeight: 600 } },
+        { type: 'text', left: 20, top: 4, style: { text: 'HDB Era:', fill: legendTextColor(), fontSize: 11, fontWeight: 500 } },
+        { type: 'text', left: 76, top: 5, style: { text: 'Old', fill: legendTextColor(), fontSize: 10, fontWeight: 600 } },
         {
           type: 'rect',
           left: 100,
@@ -445,16 +445,16 @@ function renderQ2Chart2Option(areas) {
             shadowOffsetY: 2
           }
         },
-        { type: 'text', left: 226, top: 5, style: { text: 'New', fill: '#ffffff', fontSize: 10, fontWeight: 600 } },
+        { type: 'text', left: 226, top: 5, style: { text: 'New', fill: legendTextColor(), fontSize: 10, fontWeight: 600 } },
       ],
     }],
     grid: { left: 72, right: 80, top: 86, bottom: 82 },
     tooltip: {
       trigger: 'axis',
       axisPointer: { type: 'shadow' },
-      backgroundColor: '#1e222bf0',
-      borderColor: '#3a3f4a',
-      textStyle: { color: '#e8eaed', fontSize: 12 },
+      backgroundColor: tooltipBg(),
+      borderColor: tooltipBorder(),
+      textStyle: { color: tooltipText(), fontSize: 12 },
       formatter: params => {
         if (!params || !params.length) return '';
         const idx = params[0].dataIndex;
@@ -483,8 +483,8 @@ function renderQ2Chart2Option(areas) {
     xAxis: {
       type: 'category',
       data: categories,
-      axisLabel: { color: '#aaa', fontSize: 9, interval: 0, rotate: 45 },
-      axisLine: { lineStyle: { color: '#2a2f3a' } },
+      axisLabel: { color: axisLabelStrong(), fontSize: 9, interval: 0, rotate: 45 },
+      axisLine: { lineStyle: { color: axisLineColor() } },
       axisTick: { show: false },
     },
     yAxis: [
@@ -493,9 +493,9 @@ function renderQ2Chart2Option(areas) {
         name: 'Per HDB (m)',
         nameLocation: 'middle',
         nameGap: 50,
-        nameTextStyle: { fontSize: 11, color: '#4992ff' },
-        axisLabel: { color: '#4992ff', fontSize: 10 },
-        splitLine: { lineStyle: { color: '#1c2029' } },
+        nameTextStyle: { fontSize: 11, color: perHdbCol() },
+        axisLabel: { color: perHdbCol(), fontSize: 10 },
+        splitLine: { lineStyle: { color: splitLineColor() } },
         axisLine: { show: false },
       },
       {
@@ -503,8 +503,8 @@ function renderQ2Chart2Option(areas) {
         name: 'Per 1,000 residents (m)',
         nameLocation: 'middle',
         nameGap: 50,
-        nameTextStyle: { fontSize: 11, color: '#fdd835' },
-        axisLabel: { color: '#fdd835', fontSize: 10 },
+        nameTextStyle: { fontSize: 11, color: perKCol() },
+        axisLabel: { color: perKCol(), fontSize: 10 },
         splitLine: { show: false },
         axisLine: { show: false },
       },
@@ -516,7 +516,7 @@ function renderQ2Chart2Option(areas) {
         barWidth: '62%',
         data: barData,
         yAxisIndex: 0,
-        emphasis: { itemStyle: { borderColor: '#fff', borderWidth: 2 } },
+        emphasis: { itemStyle: { borderColor: strongText(), borderWidth: 2 } },
       },
       {
         name: 'Per 1,000 residents (m)',
@@ -526,8 +526,8 @@ function renderQ2Chart2Option(areas) {
         smooth: false,
         symbol: 'circle',
         symbolSize: 6,
-        lineStyle: { color: '#fdd835', width: 2.2 },
-        itemStyle: { color: '#fdd835', borderColor: '#0f1117', borderWidth: 1.5 },
+        lineStyle: { color: perKCol(), width: 2.2 },
+        itemStyle: { color: perKCol(), borderColor: borderColor(), borderWidth: 1.5 },
       },
     ],
   }, true);
@@ -628,6 +628,7 @@ async function openQ2Map(areaName) {
   if (!detail) return;
 
   q2MapAreaName = areaName;
+  window.q2MapAreaName = areaName;
 
   document.getElementById('q2-chart-view').style.display = 'none';
   document.getElementById('q2-map-view').style.display = 'flex';
@@ -646,6 +647,7 @@ function q2BackToChart() {
   document.getElementById('q2-map-view').style.display = 'none';
   document.getElementById('q2-chart-view').style.display = 'flex';
   if (q2Map) { q2Map.remove(); q2Map = null; }
+  window.q2MapAreaName = null;
   if (q2Chart) q2Chart.resize(); else renderQ2HdbScatter();
   if (q2TimelineChart) q2TimelineChart.resize(); else renderQ2Timeline();
 }
@@ -732,8 +734,8 @@ function initQ2Map(detail, areaName) {
   q2Map = new maplibregl.Map({
     container: 'q2-map',
     style: { version: 8,
-      sources: { carto: { type: 'raster', tiles: ['https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'], tileSize: 256, attribution: '&copy; CartoDB &copy; OSM' } },
-      layers: [{ id: 'carto', type: 'raster', source: 'carto', paint: { 'raster-opacity': 0.85 } }]
+      sources: { carto: { type: 'raster', tiles: [mapTileUrl()], tileSize: 256, attribution: '&copy; CartoDB &copy; OSM' } },
+      layers: [{ id: 'carto', type: 'raster', source: 'carto', paint: { 'raster-opacity': isLight() ? 1 : 0.85 } }]
     },
     center: [centerLng, centerLat], zoom: 13, maxZoom: 18,
   });
@@ -752,7 +754,7 @@ function initQ2Map(detail, areaName) {
       });
       q2Map.addLayer({
         id: 'area-line', type: 'line', source: 'area-boundary',
-        paint: { 'line-color': '#8a8f9a', 'line-width': 1.8, 'line-opacity': 0.7 }
+        paint: { 'line-color': mapBoundaryColor(), 'line-width': 1.8, 'line-opacity': 0.7 }
       });
     }
 
@@ -780,7 +782,7 @@ function initQ2Map(detail, areaName) {
       })) };
       q2Map.addSource('area-fp', { type: 'geojson', data: fpGeo });
       q2Map.addLayer({ id: 'area-fp', type: 'line', source: 'area-fp',
-        paint: { 'line-color': '#bbb', 'line-width': 1.5, 'line-opacity': 0.5 } });
+        paint: { 'line-color': mapFootpathColor(), 'line-width': 1.5, 'line-opacity': 0.5 } });
     }
 
     // ── 3. Covered linkways (Polygon rings, pre-filtered) ─────────
@@ -863,7 +865,7 @@ function initQ2Map(detail, areaName) {
     });
     stations.forEach(s => {
       const el = document.createElement('div');
-      el.style.cssText = 'color:#fff;font-size:11px;font-weight:700;text-shadow:0 0 4px #000,0 0 8px #000;pointer-events:none;white-space:nowrap;transform:translate(-50%,-100%);margin-top:-12px;';
+      el.style.cssText = `color:${mapLabelColor()};font-size:11px;font-weight:700;text-shadow:${mapLabelShadow()};pointer-events:none;white-space:nowrap;transform:translate(-50%,-100%);margin-top:-12px;`;
       el.textContent = shortName(s.name);
       new maplibregl.Marker({ element: el }).setLngLat([s.lng, s.lat]).addTo(q2Map);
     });

@@ -43,7 +43,7 @@ function renderQ3AgeStack() {
 
   const el = document.getElementById('q3-chart1');
   if (!el) return;
-  if (!q3Chart1) q3Chart1 = echarts.init(el, 'dark');
+  if (!q3Chart1) q3Chart1 = echarts.init(el, getEchartsTheme());
 
   const areas = [...data]
     .filter(a => a.n_hdb_400m >= 25)
@@ -82,7 +82,7 @@ function renderQ3AgeStack() {
     symbol: L.symbol,
     symbolSize: 8,
     lineStyle: { color: L.color, width: 2.5 },
-    itemStyle: { color: L.color, borderColor: '#0f1117', borderWidth: 1.5 },
+    itemStyle: { color: L.color, borderColor: borderColor(), borderWidth: 1.5 },
     emphasis: { focus: 'series' },
     data: areas.map(a => {
       if (L.key === 'pct_75plus') return pctRange(a.name, 75, 120);
@@ -93,21 +93,21 @@ function renderQ3AgeStack() {
   }));
 
   q3Chart1.setOption({
-    backgroundColor: '#0f1117',
+    backgroundColor: chartBg(),
     animation: true,
     animationDuration: 700,
     title: {
       text: 'Demographic Shift across HDB Eras (Old → New)',
       left: 16, top: 10,
-      textStyle: { fontSize: 13, fontWeight: 600, color: '#ddd' },
+      textStyle: { fontSize: 13, fontWeight: 600, color: titleColor() },
     },
     legend: {
       data: LINE.map(L => L.label),
       selected: Object.fromEntries(LINE.map(L => [L.label, true])),
       right: 16, top: 4,
-      textStyle: { color: '#bbb', fontSize: 10 },
-      backgroundColor: 'rgba(15,17,23,0.75)',
-      borderColor: '#2a2f3a',
+      textStyle: { color: legendWeakText(), fontSize: 10 },
+      backgroundColor: legendBgColor(),
+      borderColor: axisLineColor(),
       borderWidth: 1,
       borderRadius: 6,
       padding: [8, 12],
@@ -117,9 +117,9 @@ function renderQ3AgeStack() {
     grid: { left: 56, right: 40, top: 52, bottom: 78 },
     tooltip: {
       trigger: 'axis',
-      backgroundColor: '#1e222bf0',
-      borderColor: '#3a3f4a',
-      textStyle: { color: '#e8eaed', fontSize: 12 },
+      backgroundColor: tooltipBg(),
+      borderColor: tooltipBorder(),
+      textStyle: { color: tooltipText(), fontSize: 12 },
       formatter: params => {
         if (!params || !params.length) return '';
         const idx = params[0].dataIndex;
@@ -136,8 +136,8 @@ function renderQ3AgeStack() {
     xAxis: {
       type: 'category',
       data: categories,
-      axisLabel: { color: '#aaa', fontSize: 9, interval: 0, rotate: 45 },
-      axisLine: { lineStyle: { color: '#2a2f3a' } },
+      axisLabel: { color: axisLabelStrong(), fontSize: 9, interval: 0, rotate: 45 },
+      axisLine: { lineStyle: { color: axisLineColor() } },
       axisTick: { show: false },
     },
     yAxis: {
@@ -145,11 +145,11 @@ function renderQ3AgeStack() {
       name: 'Share of residents (%)',
       nameLocation: 'middle',
       nameGap: 40,
-      nameTextStyle: { fontSize: 11, color: '#888' },
+      nameTextStyle: { fontSize: 11, color: axisNameColor() },
       min: 0,
       max: 60,
-      axisLabel: { color: '#888', fontSize: 10, formatter: '{value}%' },
-      splitLine: { lineStyle: { color: '#1c2029' } },
+      axisLabel: { color: axisLabelColor(), fontSize: 10, formatter: '{value}%' },
+      splitLine: { lineStyle: { color: splitLineColor() } },
       axisLine: { show: false },
     },
     series,
@@ -247,9 +247,9 @@ function renderQ3CommuterRose() {
   
   // 3 groups: old / mid / new — each is 3 areas merged together
   const groups = [
-    { label: 'Old HDB', areas: ['BUKIT MERAH', 'QUEENSTOWN', 'KALLANG'], color: '#ef5350', umbrellaColor: '#ef5350' },
-    { label: 'Mid-age HDB', areas: ['CHOA CHU KANG', 'TOA PAYOH', 'BISHAN'], color: '#ffeb3b', umbrellaColor: '#ffeb3b' },
-    { label: 'New HDB', areas: ['SENGKANG', 'SEMBAWANG', 'PUNGGOL'], color: '#66bb6a', umbrellaColor: '#66bb6a' },
+    { label: 'Old HDB', areas: ['BUKIT MERAH', 'QUEENSTOWN', 'KALLANG'], color: safeRed(),    umbrellaColor: safeRed()    },
+    { label: 'Mid-age HDB', areas: ['CHOA CHU KANG', 'TOA PAYOH', 'BISHAN'], color: safeYellow(), umbrellaColor: safeYellow() },
+    { label: 'New HDB', areas: ['SENGKANG', 'SEMBAWANG', 'PUNGGOL'], color: safeGreen(),  umbrellaColor: safeGreen()  },
   ];
 
   let displayAreas = groups.map(g => {
@@ -278,7 +278,7 @@ function renderQ3CommuterRose() {
   }
 
   el.innerHTML = '';
-  el.style.backgroundColor = '#0f1117';
+  el.style.backgroundColor = chartBg();
   el.style.display = 'flex';
   el.style.flexDirection = 'column';
   el.style.padding = '16px';
@@ -287,7 +287,7 @@ function renderQ3CommuterRose() {
 
   const title = document.createElement('div');
   title.innerHTML = `
-    <div style="font-size: 13px; font-weight: 600; color: #ddd; margin-bottom: 16px;">Growing Commuter Population, Shrinking Linkway Coverage (25–50 yr olds)</div>
+    <div style="font-size: 13px; font-weight: 600; color: ${titleColor()}; margin-bottom: 16px;">Growing Commuter Population, Shrinking Linkway Coverage (25–50 yr olds)</div>
   `;
   el.appendChild(title);
 
@@ -312,7 +312,12 @@ function renderQ3CommuterRose() {
     const personColor = a._color;
 
     const block = document.createElement('div');
-    block.style.background = '#1a1f2a';
+    if (isLight()) {
+      block.style.background = 'transparent';
+      block.style.borderBottom = `3px solid ${personColor}`;
+    } else {
+      block.style.background = cardBg();
+    }
     block.style.borderRadius = '10px';
     block.style.padding = '16px 12px';
     block.style.display = 'flex';
@@ -324,10 +329,10 @@ function renderQ3CommuterRose() {
     block.innerHTML = `
       <div style="margin-bottom: 14px; text-align: center;">
         <div style="font-size: 15px; font-weight: bold; color: ${personColor};">${a.name}</div>
-        <div style="font-size: 10px; color: #888; margin-top: 3px;">${subNames}</div>
-        <div style="font-size: 10px; color: #aaa; margin-top: 2px;">HDB built ${a.year_range}</div>
-        <div style="font-size: 13px; margin-top: 8px; color: #ddd;"><strong>${Math.round(a.commuters / 1000)}k</strong> commuters (25–50)</div>
-        <div style="font-size: 15px; margin-top: 4px; font-weight: 700; color: #fff;">${a.lw_per_1k.toFixed(1)} <span style="font-size:11px;color:#888;">m / 1k commuters</span></div>
+        <div style="font-size: 10px; color: ${mutedText()}; margin-top: 3px;">${subNames}</div>
+        <div style="font-size: 10px; color: ${axisLabelStrong()}; margin-top: 2px;">HDB built ${a.year_range}</div>
+        <div style="font-size: 13px; margin-top: 8px; color: ${isLight()?'#2b3240':'#ddd'};"><strong>${Math.round(a.commuters / 1000)}k</strong> commuters (25–50)</div>
+        <div style="font-size: 15px; margin-top: 4px; font-weight: 700; color: ${strongText()};">${a.lw_per_1k.toFixed(1)} <span style="font-size:11px;color:${mutedText()};">m / 1k commuters</span></div>
       </div>
     `;
 
@@ -343,8 +348,8 @@ function renderQ3CommuterRose() {
     const umbrellaColor = a._umbrellaColor || '#888';
     viz.insertAdjacentHTML('beforeend', `
       <div style="width: 100%; height: 18px; position: relative; display: flex; justify-content: center; margin-bottom: 6px;">
-        <div style="width: ${coveragePct}%; height: 100%; border-top-left-radius: 40px; border-top-right-radius: 40px; background: ${umbrellaColor}; position: relative; transition: width 1s ease-out; box-shadow: 0 -2px 6px rgba(0,0,0,0.5); z-index: 2;">
-          <div style="position: absolute; left: 50%; bottom: -4px; width: 2px; height: 4px; background: #888; transform: translateX(-50%);"></div>
+        <div style="width: ${coveragePct}%; height: 100%; border-top-left-radius: 40px; border-top-right-radius: 40px; background: ${umbrellaColor}; position: relative; transition: width 1s ease-out; box-shadow: 0 -2px 6px ${isLight()?'rgba(0,0,0,0.15)':'rgba(0,0,0,0.5)'}; z-index: 2;">
+          <div style="position: absolute; left: 50%; bottom: -4px; width: 2px; height: 4px; background: ${isLight()?'#555':'#888'}; transform: translateX(-50%);"></div>
         </div>
       </div>
     `);

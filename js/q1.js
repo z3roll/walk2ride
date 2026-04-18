@@ -28,7 +28,7 @@ function onDualFilter() {
 
 function renderChart(highlightGroup) {
   currentHighlight = highlightGroup;
-  if (!chart) chart = echarts.init(document.getElementById('chart'), 'dark');
+  if (!chart) chart = echarts.init(document.getElementById('chart'), getEchartsTheme());
   const d = DATA;
   const rainMin = Math.min(...d.map(x=>x.rainfall_mm)), rainMax = Math.max(...d.map(x=>x.rainfall_mm)), rainRange = rainMax - rainMin || 1;
   const highlightSet = highlightGroup ? new Set(CASE_STUDIES[highlightGroup] || []) : null;
@@ -54,7 +54,7 @@ function renderChart(highlightGroup) {
   const xMed = xVals[Math.floor(xVals.length/2)], yMed = yVals[Math.floor(yVals.length/2)];
 
   chart.setOption({
-    backgroundColor: '#0f1117',
+    backgroundColor: chartBg(),
     animation: true, animationDuration: 600,
     grid: { left: 70, right: 40, top: 50, bottom: 60 },
     title: {
@@ -62,10 +62,10 @@ function renderChart(highlightGroup) {
         ? {well_served:'Case A: HDB Precinct Hubs', high_mismatch:'Case B: CBD Stations — Demand Without HDB', over_provisioned:'Case C: HDB-Embedded LRT — HDB Without Demand'}[highlightGroup]
 
         : 'Shelter Coverage vs Station Factors — All ' + d.length + ' MRT/LRT Stations',
-      left:16, top:12, textStyle:{fontSize:13,fontWeight:600,color:'#ddd'},
+      left:16, top:12, textStyle:{fontSize:13,fontWeight:600,color:titleColor()},
     },
     tooltip: {
-      trigger:'item', backgroundColor:'#1e222bf0', borderColor:'#3a3f4a', textStyle:{color:'#e8eaed',fontSize:12},
+      trigger:'item', backgroundColor:tooltipBg(), borderColor:tooltipBorder(), textStyle:{color:tooltipText(),fontSize:12},
       formatter: p => {
         if (p.data._filtered) return null;
         const s = p.data._raw;
@@ -77,26 +77,26 @@ function renderChart(highlightGroup) {
           <span style="color:#555;font-size:10px;">Click to view on map →</span>`;
       },
     },
-    xAxis: { name:'Daily Ridership (pax/day)', nameLocation:'middle', nameGap:36, nameTextStyle:{fontSize:12,color:'#888'}, type:'value', max:150000,
-      axisLabel:{formatter:v=>v>=1000?(v/1000).toFixed(0)+'K':v,color:'#666',fontSize:10}, splitLine:{lineStyle:{color:'#1c2029'}}, axisLine:{lineStyle:{color:'#2a2f3a'}} },
-    yAxis: { name:'Shelter Coverage (%)', nameLocation:'middle', nameGap:48, nameTextStyle:{fontSize:12,color:'#888'}, type:'value', max:80,
-      axisLabel:{formatter:v=>v+'%',color:'#666',fontSize:10}, splitLine:{lineStyle:{color:'#1c2029'}}, axisLine:{lineStyle:{color:'#2a2f3a'}} },
+    xAxis: { name:'Daily Ridership (pax/day)', nameLocation:'middle', nameGap:36, nameTextStyle:{fontSize:12,color:axisNameColor()}, type:'value', max:150000,
+      axisLabel:{formatter:v=>v>=1000?(v/1000).toFixed(0)+'K':v,color:axisLabelColor(),fontSize:10}, splitLine:{lineStyle:{color:splitLineColor()}}, axisLine:{lineStyle:{color:axisLineColor()}} },
+    yAxis: { name:'Shelter Coverage (%)', nameLocation:'middle', nameGap:48, nameTextStyle:{fontSize:12,color:axisNameColor()}, type:'value', max:80,
+      axisLabel:{formatter:v=>v+'%',color:axisLabelColor(),fontSize:10}, splitLine:{lineStyle:{color:splitLineColor()}}, axisLine:{lineStyle:{color:axisLineColor()}} },
     series: [{
       type:'scatter', data:seriesData,
-      emphasis:{ itemStyle:{borderColor:'#fff',borderWidth:2.5} },
-      markLine:{ silent:true, lineStyle:{color:'rgba(255,255,255,0.08)',type:'dashed',width:1}, data:[{xAxis:xMed},{yAxis:yMed}], label:{show:false}, symbol:'none' },
+      emphasis:{ itemStyle:{borderColor:strongText(),borderWidth:2.5} },
+      markLine:{ silent:true, lineStyle:{color:dimDashColor(),type:'dashed',width:1}, data:[{xAxis:xMed},{yAxis:yMed}], label:{show:false}, symbol:'none' },
       markArea:{ silent:true, data:[
         [{xAxis:xMed,yAxis:yMed,itemStyle:{color:'rgba(76,175,80,0.08)'}},{xAxis:150000,yAxis:80}],
         [{xAxis:xMed,yAxis:0,itemStyle:{color:'rgba(239,83,80,0.09)'}},{xAxis:150000,yAxis:yMed}],
         [{xAxis:0,yAxis:yMed,itemStyle:{color:'rgba(79,195,247,0.06)'}},{xAxis:xMed,yAxis:80}],
-        [{xAxis:0,yAxis:0,itemStyle:{color:'rgba(255,255,255,0.04)'}},{xAxis:xMed,yAxis:yMed}],
+        [{xAxis:0,yAxis:0,itemStyle:{color:isLight()?'rgba(0,0,0,0.035)':'rgba(255,255,255,0.04)'}},{xAxis:xMed,yAxis:yMed}],
       ], label:{show:false} },
     }],
     graphic: [
-      {type:'text',right:55,top:68,style:{text:'Well-served',fill:'rgba(76,175,80,0.55)',fontSize:15,fontWeight:700}},
-      {type:'text',right:55,bottom:70,style:{text:'Demand–Supply\nMismatch Zone',fill:'rgba(239,83,80,0.55)',fontSize:15,fontWeight:700,lineHeight:20}},
-      {type:'text',left:80,top:68,style:{text:'Over-provisioned?',fill:'rgba(79,195,247,0.5)',fontSize:15,fontWeight:700}},
-      {type:'text',left:80,bottom:70,style:{text:'Low priority',fill:'rgba(255,255,255,0.22)',fontSize:14,fontWeight:600}},
+      {type:'text',right:55,top:68,style:{text:'Well-served',fill:zoneWellServed(),fontSize:15,fontWeight:700}},
+      {type:'text',right:55,bottom:70,style:{text:'Demand–Supply\nMismatch Zone',fill:zoneMismatch(),fontSize:15,fontWeight:700,lineHeight:20}},
+      {type:'text',left:80,top:68,style:{text:'Over-provisioned?',fill:zoneOverProv(),fontSize:15,fontWeight:700}},
+      {type:'text',left:80,bottom:70,style:{text:'Low priority',fill:zoneLowPriority(),fontSize:14,fontWeight:600}},
     ],
     dataZoom:[{type:'inside',xAxisIndex:0},{type:'inside',yAxisIndex:0}],
   }, true);
@@ -116,7 +116,7 @@ function renderSidebar() {
     <div class="narrative" style="border-color:#ff9800;background:rgba(255,152,0,0.06);">
       <div class="section-tag"><div class="dot" style="background:#ff9800;"></div>How the Mismatch Score is computed</div>
       Each station gets a <strong>mismatch score ∈ [0, 1]</strong> built from min–max normalized metrics:
-      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;background:rgba(0,0,0,0.35);padding:8px 10px;border-radius:6px;margin:8px 0;line-height:1.7;color:#e8eaed;">
+      <div class="code-box" style="font-family:'JetBrains Mono',monospace;font-size:11px;padding:8px 10px;border-radius:6px;margin:8px 0;line-height:1.7;">
         demand   = 0.6·ridership̂ + 0.4·rainfall̂<br>
         supply   = shelter_ratiô<br>
         mismatch = demand · (1 − supply)<br>
@@ -244,6 +244,7 @@ function openMapView(stationName) {
   const summary = DATA.find(d => d.station === stationName);
   if (!detail || !summary) return;
 
+  window.q1MapStation = stationName;
   document.getElementById('chart-view').classList.remove('active');
   document.getElementById('map-view').classList.add('active');
 
@@ -283,6 +284,7 @@ function backToChart() {
   document.getElementById('map-view').classList.remove('active');
   document.getElementById('chart-view').classList.add('active');
   if (map) { map.remove(); map = null; }
+  window.q1MapStation = null;
   chart.resize();
 }
 
@@ -373,11 +375,11 @@ function initMap(detail, summary) {
     container: 'map',
     style: { version: 8,
       sources: {
-        carto: { type: 'raster', tiles: ['https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'], tileSize: 256, attribution: '&copy; CartoDB &copy; OSM' }
+        carto: { type: 'raster', tiles: [mapTileUrl()], tileSize: 256, attribution: '&copy; CartoDB &copy; OSM' }
       },
       layers: [{
         id: 'carto', type: 'raster', source: 'carto',
-        paint: { 'raster-opacity': 0.85 }
+        paint: { 'raster-opacity': isLight() ? 1 : 0.85 }
       }]
     },
     center: [lng, lat],
@@ -409,7 +411,7 @@ function initMap(detail, summary) {
 
     if (geo.footpaths && geo.footpaths.length) {
       map.addSource('footpaths', { type: 'geojson', data: segsToGeoJSON(geo.footpaths) });
-      map.addLayer({ id: 'footpaths', type: 'line', source: 'footpaths', paint: { 'line-color': '#bbb', 'line-width': 3, 'line-opacity': 0.6 } });
+      map.addLayer({ id: 'footpaths', type: 'line', source: 'footpaths', paint: { 'line-color': mapFootpathColor(), 'line-width': 3, 'line-opacity': 0.6 } });
     }
 
     const clMeta = geo.covered_linkways_meta || [];
@@ -462,7 +464,7 @@ function initMap(detail, summary) {
     map.addLayer({ id: 'station-pt', type: 'circle', source: 'station-pt', paint: { 'circle-radius': 8, 'circle-color': '#ff5722', 'circle-stroke-width': 3, 'circle-stroke-color': '#fff' } });
     // Station name as HTML marker (no glyph dependency)
     const labelEl = document.createElement('div');
-    labelEl.style.cssText = 'color:#fff;font-size:13px;font-weight:700;text-shadow:0 0 4px #000,0 0 8px #000;pointer-events:none;white-space:nowrap;transform:translate(-50%,-100%);margin-top:-18px;';
+    labelEl.style.cssText = `color:${mapLabelColor()};font-size:13px;font-weight:700;text-shadow:${mapLabelShadow()};pointer-events:none;white-space:nowrap;transform:translate(-50%,-100%);margin-top:-18px;`;
     labelEl.textContent = shortName(summary.station);
     new maplibregl.Marker({ element: labelEl }).setLngLat([lng, lat]).addTo(map);
 
@@ -486,7 +488,7 @@ function initMap(detail, summary) {
       // POI labels as HTML markers
       items.forEach(p => {
         const el = document.createElement('div');
-        el.style.cssText = 'color:' + cfg.color + ';font-size:9px;font-weight:500;text-shadow:0 0 3px #000,0 0 6px #000;pointer-events:none;white-space:nowrap;transform:translateX(-50%);margin-top:6px;';
+        el.style.cssText = `color:${cfg.color};font-size:9px;font-weight:500;text-shadow:${mapPoiLabelShadow()};pointer-events:none;white-space:nowrap;transform:translateX(-50%);margin-top:6px;`;
         el.textContent = p.subtype || cfg.label;
         new maplibregl.Marker({ element: el, anchor: 'top' }).setLngLat([p.lng, p.lat]).addTo(map);
       });
@@ -538,7 +540,7 @@ function initMap(detail, summary) {
 function renderCorrChart() {
   const container = document.getElementById('chart-corr');
   if (!container) return;
-  if (!corrChart) corrChart = echarts.init(container, 'dark');
+  if (!corrChart) corrChart = echarts.init(container, getEchartsTheme());
   const analysis = window.ANALYSIS;
   if (!analysis || !analysis.rq1_correlations) return;
 
@@ -557,52 +559,57 @@ function renderCorrChart() {
   }
 
   corrChart.setOption({
-    backgroundColor: '#0f1117',
+    backgroundColor: chartBg(),
     animation: true,
     animationDuration: 700,
     title: {
       text: 'Correlation: Shelter Coverage vs Candidate Factors',
       left: 12, top: 6,
-      textStyle: { fontSize: 12, fontWeight: 600, color: '#ddd' },
+      textStyle: { fontSize: 12, fontWeight: 600, color: titleColor() },
     },
     grid: { left: 140, right: 60, top: 50, bottom: 22 },
     tooltip: {
       trigger: 'item',
-      backgroundColor: '#1e222bf0',
-      borderColor: '#3a3f4a',
-      textStyle: { color: '#e8eaed', fontSize: 11 },
+      backgroundColor: tooltipBg(),
+      borderColor: tooltipBorder(),
+      textStyle: { color: tooltipText(), fontSize: 11 },
       formatter: p => `<b>${p.name}</b><br/>Pearson r = <b style="color:${corrColor(p.value)};">${p.value >= 0 ? '+' : ''}${p.value.toFixed(3)}</b>`,
     },
     xAxis: {
       type: 'value',
       min: -0.5, max: 1.0,
-      axisLabel: { color: '#888', fontSize: 10, formatter: v => v.toFixed(1) },
-      splitLine: { lineStyle: { color: '#1c2029' } },
-      axisLine: { lineStyle: { color: '#2a2f3a' } },
+      axisLabel: { color: axisLabelColor(), fontSize: 10, formatter: v => v.toFixed(1) },
+      splitLine: { lineStyle: { color: splitLineColor() } },
+      axisLine: { lineStyle: { color: axisLineColor() } },
     },
     yAxis: {
       type: 'category',
       data: names,
-      axisLabel: { color: '#ccc', fontSize: 11, fontWeight: 500 },
-      axisLine: { lineStyle: { color: '#2a2f3a' } },
+      axisLabel: { color: axisLabelStrong(), fontSize: 11, fontWeight: 500 },
+      axisLine: { lineStyle: { color: axisLineColor() } },
       axisTick: { show: false },
     },
     series: [{
       type: 'bar',
-      data: vals.map(v => ({ value: v, itemStyle: { color: corrColor(v) } })),
+      data: vals.map(v => ({
+        value: v,
+        itemStyle: { color: corrColor(v) },
+        label: {
+          position: v >= 0 ? 'right' : 'left',
+          color: corrColor(v),
+        },
+      })),
       barWidth: '55%',
       label: {
         show: true,
-        position: v => v.value >= 0 ? 'right' : 'left',
         formatter: p => (p.value >= 0 ? '+' : '') + p.value.toFixed(2),
-        color: '#fff',
         fontSize: 10,
-        fontWeight: 600,
+        fontWeight: 700,
       },
       markLine: {
         silent: true,
         symbol: 'none',
-        lineStyle: { color: 'rgba(255,255,255,0.25)', type: 'dashed' },
+        lineStyle: { color: markDashColor(), type: 'dashed' },
         data: [{ xAxis: 0 }],
       },
     }],

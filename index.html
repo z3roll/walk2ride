@@ -7,7 +7,7 @@
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<link rel="stylesheet" href="css/style.css?v=7">
+<link rel="stylesheet" href="css/style.css?v=9">
 </head>
 <body style="display:flex;flex-direction:column;">
 
@@ -16,6 +16,8 @@
   <button class="nav-tab active" data-rq="q1" onclick="switchRQ('q1')">Q1: What drives linkway coverage?</button>
   <button class="nav-tab" data-rq="q2" onclick="switchRQ('q2')">Q2: Does every HDB area get equal shelter?</button>
   <button class="nav-tab" data-rq="q3" onclick="switchRQ('q3')">Q3: Who benefits from linkway coverage?</button>
+  <div style="flex:1;"></div>
+  <button id="theme-toggle" class="nav-tab" onclick="toggleTheme()" title="Switch theme" style="font-size:16px;padding:6px 12px;">&#9790;</button>
 </div>
 
 <!-- ══════════ CONTENT AREA ══════════ -->
@@ -49,8 +51,8 @@
             <div style="position:relative;width:140px;height:20px;">
               <input type="range" id="filter-min" min="0" max="100" value="0" style="position:absolute;width:100%;pointer-events:none;appearance:none;-webkit-appearance:none;background:none;top:0;left:0;height:20px;z-index:2;" oninput="onDualFilter()">
               <input type="range" id="filter-max" min="0" max="100" value="100" style="position:absolute;width:100%;pointer-events:none;appearance:none;-webkit-appearance:none;background:none;top:0;left:0;height:20px;z-index:3;" oninput="onDualFilter()">
-              <div style="position:absolute;top:8px;left:0;right:0;height:4px;background:#2a2f3a;border-radius:2px;z-index:1;"></div>
-              <div id="filter-track" style="position:absolute;top:8px;height:4px;background:#4fc3f7;border-radius:2px;z-index:1;"></div>
+              <div style="position:absolute;top:8px;left:0;right:0;height:4px;background:var(--border);border-radius:2px;z-index:1;"></div>
+              <div id="filter-track" style="position:absolute;top:8px;height:4px;background:var(--accent);border-radius:2px;z-index:1;"></div>
             </div>
             <span id="filter-count" style="color:#666;"></span>
           </div>
@@ -113,7 +115,7 @@
       <div id="q2-map-container" style="flex:1;position:relative;">
         <button id="q2-back-btn" onclick="q2BackToChart()" style="position:absolute;top:16px;left:16px;z-index:10;padding:8px 18px;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);box-shadow:0 2px 12px rgba(0,0,0,0.4);">&#8592; Back to Chart</button>
         <div id="q2-map" style="width:100%;height:100%;"></div>
-        <div id="q2-map-legend" style="position:absolute;bottom:20px;left:16px;z-index:10;background:rgba(24,27,34,0.92);border:1px solid var(--border);border-radius:10px;padding:14px 18px;font-size:11px;color:var(--text);box-shadow:0 4px 20px rgba(0,0,0,0.5);min-width:180px;"></div>
+        <div id="q2-map-legend" class="q2-map-legend-box" style="position:absolute;bottom:20px;left:16px;z-index:10;border:1px solid var(--border);border-radius:10px;padding:14px 18px;font-size:11px;color:var(--text);min-width:180px;"></div>
       </div>
       <div class="resize-handle" data-target="q2-map-sidebar"></div>
       <div id="q2-map-sidebar" style="width:380px;min-width:340px;background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;">
@@ -150,10 +152,10 @@
 </div>
 
 <!-- ══════════ JS MODULES ══════════ -->
-<script src="js/common.js?v=21"></script>
-<script src="js/q1.js?v=21"></script>
-<script src="js/q2.js?v=21"></script>
-<script src="js/q3.js?v=21"></script>
+<script src="js/common.js?v=25"></script>
+<script src="js/q1.js?v=25"></script>
+<script src="js/q2.js?v=25"></script>
+<script src="js/q3.js?v=25"></script>
 <script>
 /* ── Navigation ── */
 let activeRQ = 'q1';
@@ -184,6 +186,93 @@ function switchRQ(rq) {
 window.onDataLoaded = function() {
   q1Init();
 };
+
+/* ── Theme toggle ── */
+function getEchartsTheme() {
+  return document.documentElement.getAttribute('data-theme') === 'light' ? null : 'dark';
+}
+function chartBg() {
+  return getComputedStyle(document.documentElement).getPropertyValue('--chart-bg').trim();
+}
+function isLight() {
+  return document.documentElement.getAttribute('data-theme') === 'light';
+}
+function tooltipBg() { return isLight() ? '#ffffffe8' : '#1e222bf0'; }
+function tooltipBorder() { return isLight() ? '#d8dce4' : '#3a3f4a'; }
+function tooltipText() { return isLight() ? '#1a1d24' : '#e8eaed'; }
+function cardBg() { return isLight() ? '#f0f1f4' : '#1a1f2a'; }
+function borderColor() { return isLight() ? '#d8dce4' : '#0f1117'; }
+
+/* ── extra theme-aware helpers for chart text / lines ── */
+function titleColor()        { return isLight() ? '#1a1d24' : '#ddd'; }
+function axisNameColor()     { return isLight() ? '#4a5160' : '#888'; }
+function axisLabelColor()    { return isLight() ? '#4a5160' : '#888'; }
+function axisLabelStrong()   { return isLight() ? '#2b3240' : '#ccc'; }
+function splitLineColor()    { return isLight() ? '#e5e8ef' : '#1c2029'; }
+function axisLineColor()     { return isLight() ? '#c8cdd6' : '#2a2f3a'; }
+function dimDashColor()      { return isLight() ? 'rgba(0,0,0,0.10)' : 'rgba(255,255,255,0.08)'; }
+function markDashColor()     { return isLight() ? 'rgba(0,0,0,0.28)' : 'rgba(255,255,255,0.25)'; }
+function legendTextColor()   { return isLight() ? '#1a1d24' : '#ffffff'; }
+function legendWeakText()    { return isLight() ? '#3a3f4a' : '#bbb'; }
+function legendBgColor()     { return isLight() ? 'rgba(255,255,255,0.90)' : 'rgba(15,17,23,0.75)'; }
+function labelOnBarColor()   { return '#fff'; }  /* bars are saturated — white stays readable */
+function zoneWellServed()    { return isLight() ? 'rgba(46,125,50,0.70)' : 'rgba(76,175,80,0.55)'; }
+function zoneMismatch()      { return isLight() ? 'rgba(198,40,40,0.70)' : 'rgba(239,83,80,0.55)'; }
+function zoneOverProv()      { return isLight() ? 'rgba(2,136,209,0.70)' : 'rgba(79,195,247,0.5)'; }
+function zoneLowPriority()   { return isLight() ? 'rgba(26,29,36,0.30)' : 'rgba(255,255,255,0.22)'; }
+function perHdbCol()         { return isLight() ? '#1565c0' : '#4992ff'; }
+function perKCol()           { return isLight() ? '#c77800' : '#fdd835'; }
+function safeYellow()        { return isLight() ? '#c77800' : '#ffeb3b'; }
+function safeGreen()         { return isLight() ? '#2e7d32' : '#66bb6a'; }
+function safeRed()           { return isLight() ? '#c62828' : '#ef5350'; }
+function strongText()        { return isLight() ? '#1a1d24' : '#fff'; }
+function mutedText()         { return isLight() ? '#6b7280' : '#888'; }
+
+/* ── map theme helpers ── */
+function mapTileUrl()        { return isLight()
+  ? 'https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png'
+  : 'https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'; }
+function mapLabelColor()     { return isLight() ? '#111' : '#fff'; }
+function mapLabelShadow()    { return isLight() ? '0 0 3px #fff,0 0 6px #fff' : '0 0 4px #000,0 0 8px #000'; }
+function mapPoiLabelShadow() { return isLight() ? '0 0 2px #fff,0 0 4px #fff' : '0 0 3px #000,0 0 6px #000'; }
+function mapFootpathColor()  { return isLight() ? '#555' : '#bbb'; }
+function mapBoundaryColor()  { return isLight() ? '#555' : '#8a8f9a'; }
+function mapMarkerStroke()   { return '#fff'; } /* always white — contrasts the orange station dot */
+
+function toggleTheme() {
+  const html = document.documentElement;
+  const isLight = html.getAttribute('data-theme') === 'light';
+  html.setAttribute('data-theme', isLight ? 'dark' : 'light');
+  document.getElementById('theme-toggle').innerHTML = isLight ? '&#9790;' : '&#9728;';
+
+  // Re-init all echarts with new theme
+  // Dispose and re-create charts
+  if (typeof q1Chart !== 'undefined' && q1Chart) { q1Chart.dispose(); q1Chart = null; }
+  if (typeof q1CorrChart !== 'undefined' && q1CorrChart) { q1CorrChart.dispose(); q1CorrChart = null; }
+  if (typeof q2Chart !== 'undefined' && q2Chart) { q2Chart.dispose(); q2Chart = null; }
+  if (typeof q2TimelineChart !== 'undefined' && q2TimelineChart) { q2TimelineChart.dispose(); q2TimelineChart = null; }
+  if (typeof q3Chart1 !== 'undefined' && q3Chart1) { q3Chart1.dispose(); q3Chart1 = null; }
+  if (typeof q3Chart2 !== 'undefined' && q3Chart2) { q3Chart2.dispose(); q3Chart2 = null; }
+
+  // Re-init current view
+  q1Init();
+  if (q2Inited) { q2Inited = false; }
+  if (q3Inited) { q3Inited = false; }
+
+  // Re-init active tab
+  if (activeRQ === 'q2') { q2Init(); q2Inited = true; }
+  else if (activeRQ === 'q3') { q3Init(); q3Inited = true; }
+
+  // Re-open map view on theme toggle so base tiles + labels repaint
+  const q1MapOpen = document.getElementById('map-view') && document.getElementById('map-view').classList.contains('active');
+  if (q1MapOpen && typeof window.q1MapStation === 'string' && typeof openMapView === 'function') {
+    openMapView(window.q1MapStation);
+  }
+  const q2MapOpen = document.getElementById('q2-map-view') && document.getElementById('q2-map-view').style.display !== 'none';
+  if (q2MapOpen && typeof window.q2MapAreaName === 'string' && typeof openQ2Map === 'function') {
+    openQ2Map(window.q2MapAreaName);
+  }
+}
 </script>
 
 </body>
