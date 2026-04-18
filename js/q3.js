@@ -247,9 +247,9 @@ function renderQ3CommuterRose() {
   
   // 3 groups: old / mid / new — each is 3 areas merged together
   const groups = [
-    { label: 'Old HDB', areas: ['BUKIT MERAH', 'QUEENSTOWN', 'KALLANG'], color: '#66bb6a', umbrellaColor: '#66bb6a' },
+    { label: 'Old HDB', areas: ['BUKIT MERAH', 'QUEENSTOWN', 'KALLANG'], color: '#ef5350', umbrellaColor: '#ef5350' },
     { label: 'Mid-age HDB', areas: ['CHOA CHU KANG', 'TOA PAYOH', 'BISHAN'], color: '#ffeb3b', umbrellaColor: '#ffeb3b' },
-    { label: 'New HDB', areas: ['SENGKANG', 'SEMBAWANG', 'PUNGGOL'], color: '#ef5350', umbrellaColor: '#ef5350' },
+    { label: 'New HDB', areas: ['SENGKANG', 'SEMBAWANG', 'PUNGGOL'], color: '#66bb6a', umbrellaColor: '#66bb6a' },
   ];
 
   let displayAreas = groups.map(g => {
@@ -429,8 +429,8 @@ function renderQ3Sidebar() {
     <div class="narrative">
       <div class="section-tag"><div class="dot" style="background:#ef5350;"></div>Chart 2 — The coverage gap in human terms</div>
       Each person icon represents working-age commuters (25–50); the umbrella shows how many metres of covered linkway each 1,000 of them share — for shelter from both rain and sun.
-      Old HDB (green) have a smaller commuter base under a wide umbrella (<strong>221 m / 1k</strong>).
-      New HDB (red) pack the largest crowd yet get the smallest umbrella (<strong>66 m / 1k</strong>).
+      Old HDB (red) have a smaller commuter base under a wide umbrella (<strong>221 m / 1k</strong>).
+      New HDB (green) pack the largest crowd yet get the smallest umbrella (<strong>66 m / 1k</strong>).
       From left to right the population grows while the umbrella shrinks — that asymmetry is the gap.
     </div>
 
